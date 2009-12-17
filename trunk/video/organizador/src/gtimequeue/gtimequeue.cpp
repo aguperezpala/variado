@@ -19,13 +19,15 @@ void GTimeQueue::updateElements(void)
 	this->printObjList.clear();	/* limpiamos */
 	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
 		if (*i) {
-			aux = this->display.rect();
-			if ((*i)->haveToPaint(aux))
+			aux = this->rect();
+			if ((*i)->haveToPaint(aux, this->refPos.x()))
 				/* si es un objeto que lo tenemos que mostrar =>
 				* lo agregamos a la lista de mostrables */
 				this->printObjList.append((*i));
 		}
 	
+	/* hacemos un repaint para actualizar la pantalla */
+	repaint();
 }
 
 
@@ -35,19 +37,30 @@ void GTimeQueue::updateElements(void)
 /* Constructor.
 * La escala inicial sera seteada en GTQ_NORMAL_SCALE (consts.h)
 */
-GTimeQueue::GTimeQueue (void)
+GTimeQueue::GTimeQueue (void)  : backImg(NULL)
 {
+	QColor timeLineColor = QColor::fromRgb(0,0,0);
+	
 	/* seteamos los valores por defecto */
-	this->backColor = QColor::fromRgb(255,255,255);
+	this->backColor = QPalette(QColor::fromRgb(255,255,255));
+	this->setPalette (this->backColor);
 	this->scale = GTQ_NORMAL_SCALE;
-	/* seteamos el color de fondo de la imagen */
-	this->display.scaled(this->size());
-	/*! NOTE: revisar esto, el 0 es el index en la table. */
-	this->display.setColor(0, this->backColor.rgba());
-	/* generamos el painter */
-	this->dispPainter = new QPainter(&this->display);
+	
+	/* configuramos el punto de referencia de la linea de tiempo */
+	this->refPos.setX(0);
+	/* la vamos a posicionar 3/4 abajo del display */
+	this->refPos.setY((int)(this->height()/2));
 	/* TODO: ahora deberiamos insertar la linea de tiempo y el puntero
 	 * 	 que señalaria en que "tiempo" actual estamos... */
+	/*! aca deberiamos setear las configuraciones de la linea de tiempo,
+	 *  el estilo y esas cosas.. */ 
+	this->timeLine = new GTQTimeLine();
+	this->timeLine->setScale(this->scale);
+	this->timeLine->setStartMs(this->refPos.x());
+	this->timeLine->setColor(timeLineColor);
+	append(this->timeLine);
+	updateElements();
+	
 }
 	
 	
@@ -55,7 +68,7 @@ GTimeQueue::GTimeQueue (void)
 /* Setea la escala, si esta fuera dentro de los rangos 
 * especificados no hace nada
 */
-void GTimeQueue::setScale(float scale)
+void GTimeQueue::setScale(unsigned long long scale)
 {
 	QList<GTQObject *>::iterator i;
 	
@@ -87,8 +100,11 @@ void GTimeQueue::append(GTQObject *obj)
 		ASSERT(obj != NULL);
 		return;
 	}
+	
 	/* agregamos un elemento... */
-	this->append(obj);
+	this->objectsList.append(obj);
+	/* seteamos la escala */
+	obj->setScale(this->scale);
 	/* reordenamos los elementos para dibujarlos en orde correcto */
 	/*qSort(this->objectsList.begin(), this->objectsList.end());*/
 	
@@ -180,18 +196,28 @@ void GTimeQueue::setBackImg(QImage * img)
 void GTimeQueue::moveRigth(int n)
 {
 	QList<GTQObject *>::iterator i;
+	unsigned long long ms = 0;
 	
 	if(n < 0) {
 		/* no esta dentro de los rangos posibles */
 		debugp("Movimiento a derecha incorrecto\n");
 		return;
 	}
-	/* si esta dentro de los rangos... seteamos */
-	this->refPos.rx() -= n;
-	/* ahora para cada uno de los objetos hacemos lo mismo. */
-	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
-		if (*i)
-			((*i)->getPos()).rx() -= n;
+	
+	/* si nos vamos a mover a la derecha debemos ver que no estamos saliendo
+	 * de las 24 hs, osea que debemos ver que la cantidad de pixeles
+	 * que nos vamos a mover no deba superar los GTQ_MAX_MS_SUPPORTED ms
+	 */
+	
+	/* primero calculamos la cantidad de milisegundos que nos vamos a mover
+	 * teniendo en cuenta la escala y n. */
+	ms = n * this->scale;
+	/* TODO: overflow? */
+	/* ahora verificamos si nos vamos al chori o no */
+	if ((unsigned long long) (ms + this->refPos.x()) > GTQ_MAX_MS_SUPPORTED)
+		return; /* no nos podemos mover mas */
+	/* else */
+	this->refPos.rx() += ms;
 	
 	updateElements();
 }
@@ -204,18 +230,23 @@ void GTimeQueue::moveRigth(int n)
 void GTimeQueue::moveLeft(int n)
 {
 	QList<GTQObject *>::iterator i;
+	unsigned long long ms = 0;
 	
 	if(n < 0) {
 		/* no esta dentro de los rangos posibles */
 		debugp("Movimiento a izquierda incorrecto\n");
 		return;
 	}
-	/* si esta dentro de los rangos... seteamos */
-	this->refPos.rx() += n;
-	/* ahora para cada uno de los objetos hacemos lo mismo. */
-	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
-		if (*i)
-			((*i)->getPos()).rx() += n;
+	
+	ms = n * this->scale;
+	/* TODO: overflow? */
+	/* ahora verificamos si nos vamos al chori o no */
+	if ((int)(this->refPos.x() - ms) < 0) {
+		return; /* no nos podemos mover mas */
+	}
+	/* else */
+	this->refPos.rx() -= ms;
+	
 	
 	updateElements();
 }
@@ -246,18 +277,42 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 {
 	QList<GTQObject *>::iterator i;
 	
+	this->dispPainter.begin(this);
 	/* verificamos si tenemos una imagen de fondo que re-dibjar */
 	if (this->backImg != NULL) {
 		/* redibujamos toda la pantalla */
-		this->dispPainter->drawImage(QPoint(0, 0), *this->backImg);
+		this->dispPainter.drawImage(QPoint(0, 0), *this->backImg);
 	} else {
 		/* si no dibujamos con el fondo de pantalla correspondiente */
-		this->display.fill(this->backColor.rgb());
+		/*!nada?*/
 	}
 	/* lo que hacemos en este caso es dibujar todos los elementos que tenemos
 	 * sobre nuestro display */
 	for (i = this->printObjList.begin(); i != this->printObjList.end(); ++i)
 		/*! if (*i) esto es fucking seguro.. no puede ser NULL */
-		(*i)->paint(this->dispPainter);
+		(*i)->paint(&this->dispPainter, this->refPos);
 	
+	this->dispPainter.end();
+}
+
+
+void GTimeQueue::resizeEvent(QResizeEvent *event)
+{
+	updateElements();
+}
+
+
+void GTimeQueue::keyPressEvent ( QKeyEvent * event )
+{
+	switch (event->key()) {
+		case Qt::Key_Right:
+			moveRigth(5);
+			printf("Moviendo Derecha\n");
+			break;
+		
+		case Qt::Key_Left:
+			moveLeft(5);
+			printf("Moviendo Izq\n");
+			break;
+	}
 }

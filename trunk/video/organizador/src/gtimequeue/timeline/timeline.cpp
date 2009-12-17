@@ -6,6 +6,15 @@ GTQTimeLine::GTQTimeLine(void)
 	/* TODO: setear el estilo y esas cosas que podemos llegar a usar */
 }
 
+/* Esta funcion va a modificar el tamaño del objeto segun la
+* escala que se pase por parametro.
+* NOTE: la escala va a representar cuantos ms son representados
+* 	 por 1 pixel.
+*/
+void GTQTimeLine::setScale(unsigned long long scale)
+{
+	this->scale = scale;
+}
 
 /*! Vamos a dibujar la linea de tiempo teniendo en cuenta el
 *   el punto de referencia (pos), la escala (que nos va a
@@ -15,15 +24,17 @@ GTQTimeLine::GTQTimeLine(void)
 * REQUIRES: 
 * 	painter != NULL
 */
-void GTQTimeLine::paint(QPainter * painter)
+void GTQTimeLine::paint(QPainter * painter, QPoint &ref)
 {
 	/* TODO: Tenemos que reimplementar eso modularizandola probablemente
 	 * en una funcion auxiliar para tener en cuenta distintos estilos.
 	 */
 	
 	/*! por el momento dibujamos una linea recta. */
-	painter->drawLine(this->rect.left(), this->rect.height()/4,
-			   this->rect.right(), this->rect.height()/4);
+	painter->setPen(this->color);
+	painter->drawText(ref, QString("linea de tiempo"));
+	painter->drawLine(this->objRect.left(), ref.y(),
+			   this->objRect.right(), ref.y());
 }
 
 /*! Siempre vamos a devolver true, siempre queremos mostrar
@@ -31,11 +42,14 @@ void GTQTimeLine::paint(QPainter * painter)
 * RETURNS:
 * 	true	si tiene que ser pintado
 */
-bool GTQTimeLine::haveToPaint(QRect &rect)
+bool GTQTimeLine::haveToPaint(QRect &rect, unsigned long long initMs)
 {
 	/* vamos a guardar este rect para usarlo luego, y devolvemos siempre
 	 * true */
-	this->rect = rect;
+	this->objRect = rect;
+	printf("***********************************************\n");
+	printf("initMs: %lld\n", initMs);
+	printf("***********************************************\n");
 	
 	return true;
 }
