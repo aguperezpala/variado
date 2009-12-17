@@ -20,6 +20,12 @@ class GTQTimeLine : public GTQObject
 		/* Constructor, no vamos a pedir nada  */
 		GTQTimeLine(void);
 		
+		/* Esta funcion va a modificar el tamaño del objeto segun la
+		* escala que se pase por parametro.
+		* NOTE: la escala va a representar cuantos ms son representados
+		* 	 por 1 pixel.
+		*/
+		void setScale(unsigned long long scale);
 		
 		/*! Vamos a dibujar la linea de tiempo teniendo en cuenta el
 		*   el punto de referencia (pos), la escala (que nos va a
@@ -29,14 +35,14 @@ class GTQTimeLine : public GTQObject
 		* REQUIRES: 
 		* 	painter != NULL
 		*/
-		void paint(QPainter * painter);
+		void paint(QPainter * painter, QPoint &ref);
 		
 		/*! Siempre vamos a devolver true, siempre queremos mostrar
 		*   la linea de tiempo...
 		* RETURNS:
 		* 	true	si tiene que ser pintado
 		*/
-		bool haveToPaint(QRect &rect);
+		bool haveToPaint(QRect &rect,  unsigned long long initMs);
 		
 		
 		/* Destructor */
@@ -47,8 +53,6 @@ class GTQTimeLine : public GTQObject
 	private:
 		/* Atributos */
 		
-		/* Rectangulo donde vamos a mostrar la linea de tiempo. */
-		QRect rect;
 
 };
 
