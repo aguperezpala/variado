@@ -1,0 +1,15 @@
+HACIENDO:
+	* Problemas al insertar mas de una caja, se dibuja solo 1.... 
+
+
+
+
+
+
+
+
+REVISAR:
+
+GTimeQueue::GTimeQueue (void):
+	this->display.setColor(...);
+

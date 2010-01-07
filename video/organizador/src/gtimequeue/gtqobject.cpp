@@ -69,9 +69,9 @@ GTQObject::~GTQObject()
 
 
 /* Vamos a definir el operador de comparacion '<' para poder
-* ordenarlos, segun el layer. */
+* ordenarlos, segun el startMs. */
 bool GTQObject::operator<(GTQObject & other)
 {
-	return (this->layer < other.layer);
+	return (this->startMs < other.getStartMs());
 }
 

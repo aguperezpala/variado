@@ -17,9 +17,9 @@ void GTimeQueue::updateElements(void)
 	 */
 	
 	this->printObjList.clear();	/* limpiamos */
+	aux = this->rect();
 	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
 		if (*i) {
-			aux = this->rect();
 			if ((*i)->haveToPaint(aux, this->refPos.x()))
 				/* si es un objeto que lo tenemos que mostrar =>
 				* lo agregamos a la lista de mostrables */
@@ -31,13 +31,75 @@ void GTimeQueue::updateElements(void)
 }
 
 
+/* funcion que mueve todos los elementos n milisegundos
+* desde un QList<GTQObject *>::iterator
+* REQUIRES:
+* 	i 	!= NULL
+*	end 	!= NULL
+*/
+void GTimeQueue::updateObjTimes(QList<GTQObject *>::iterator &i, 
+		     QList<GTQObject *>::iterator &end,
+		     unsigned long long n)
+{
+	
+	while (i != end) {
+		if (*i)
+			(*i)->setStartMs((*i)->getStartMs() + n);
+		++i;
+	}
+}
+
+/* Funcion que va a ordenar la linea de tiempo para evitar
+* posibles solapamientos entre distintos objetos.
+*/
+void GTimeQueue::ordinateElements(void)
+{
+	QList<GTQObject *>::iterator i, j, l, end;
+	unsigned long long dif = 0;
+	
+	/* si esta vacia la lista volvemos sin hacer nada */
+	if (this->objectsList.isEmpty())
+		return;
+	
+	/* no esta vacia, organizamos los elementos segun el comienzo de
+	 * de reproduccion. */
+	qSort(this->objectsList);
+	
+	/* ahora vamos a recorrer uno por uno verificando si existe algun
+	 * solapamiento, si lo existe corremos todos los posteriores el tiempo
+	 * del solapamiento y volvemos a verificar desde el siguiente elemento
+	 */
+	end = this->objectsList.end();
+	for (i = this->objectsList.begin(); i != end; ++i)
+		j = i;
+		++j;
+		if (*i && j != this->objectsList.end() && *j) {
+			/* en i tenemos el primer elemento, en j el 2, vemos
+			 * si hay solapamiento */
+			if (((*i)->getStartMs() + (*i)->getDurationMs()) >
+				(*j)->getStartMs()) {
+				
+				dif = (*i)->getStartMs() + 
+				(*i)->getDurationMs() - (*j)->getStartMs();
+				
+				/*! Si existe solapamiento => debemos correr
+				 * todos los posteriores, desde j en adelante
+				 * dif ms. */
+				l = j;
+				updateObjTimes(l,end, dif);
+			}
+		}
+	
+	
+	
+}
 
 /*! ###			Funciones publicas			### */
 
 /* Constructor.
 * La escala inicial sera seteada en GTQ_NORMAL_SCALE (consts.h)
 */
-GTimeQueue::GTimeQueue (void)  : backImg(NULL)
+GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 {
 	QColor timeLineColor = QColor::fromRgb(0,0,0);
 	
@@ -105,9 +167,17 @@ void GTimeQueue::append(GTQObject *obj)
 	this->objectsList.append(obj);
 	/* seteamos la escala */
 	obj->setScale(this->scale);
-	/* reordenamos los elementos para dibujarlos en orde correcto */
-	/*qSort(this->objectsList.begin(), this->objectsList.end());*/
 	
+	/* aumentamos el tiempo de reproduccion utilizado por la linea de tiempo
+	 */
+	this->timeUsed += obj->getDurationMs();
+	/* acomodamos la linea de tiempo */
+	/* TODO: podriamos revisar si realmente hay algun solapamiento antes
+	 * de llamar a esta funcion... */
+	//ordinateElements();
+	
+	
+	updateElements();
 }
 
 /* Funcion que elimina un obj de la lista.
@@ -123,9 +193,16 @@ void GTimeQueue::remove(GTQObject *obj)
 		return;
 	}
 	/* lo sacamos de las listas, ya que puede ser que este siendo graficado */
-	if (this->objectsList.removeOne(obj))
+	if (this->objectsList.removeOne(obj)) {
 		/* si estaba aca puede que este aca */
 		this->printObjList.removeOne(obj);
+		
+		/* decrementamos el tiempo total utilizado por la linea de 
+		 * tiempo */
+		this->timeUsed -= obj->getDurationMs();
+	}
+	/* liberamos memoria */
+	delete obj;
 	updateElements();
 	
 }

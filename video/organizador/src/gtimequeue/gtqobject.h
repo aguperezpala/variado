@@ -104,7 +104,7 @@ class GTQObject
 		bool havePoint(QPoint & p);
 		
 		/* Vamos a definir el operador de comparacion '<' para poder
-		 * ordenarlos, segun el layer. */
+		 * ordenarlos, segun el startMs. */
 		bool operator<(GTQObject & other);
 		
 		
