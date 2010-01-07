@@ -36,6 +36,12 @@ class GTimeQueue : public QWidget
 		GTimeQueue (void);
 		
 		
+		/* Funcion que devuelve la cantidad de milisegundos que estan
+		 * ocupados en la linea de tiempo.
+		 */
+		unsigned long long getTimeUsedMs(void){return this->timeUsed;};
+		
+		
 		/* ### ### ### Manipulacion de la escala ### ### ### */
 		unsigned long long getScale(void) {return this->scale;};
 		
@@ -132,6 +138,21 @@ class GTimeQueue : public QWidget
 		 */
 		void updateElements(void);
 		
+		/* funcion que mueve todos los elementos n milisegundos
+		* desde un QList<GTQObject *>::iterator
+		* REQUIRES:
+		* 	i 	!= NULL
+		* 	end != NULL
+		*/
+		void updateObjTimes(QList<GTQObject *>::iterator &i,
+				     QList<GTQObject *>::iterator &end,
+				     unsigned long long n);
+		
+		
+		/* Funcion que va a ordenar la linea de tiempo para evitar
+		 * posibles solapamientos entre distintos objetos.
+		 */
+		void ordinateElements(void);
 		
 		/* Atributos */
 		
@@ -163,6 +184,8 @@ class GTimeQueue : public QWidget
 		/* tamaño del paso que vamos a mover la ventana de la linea de
 		 * tiempo, osea la cantidad de pixeles */
 		unsigned long long stepMoveFactor;
+		/* cantidad de milisegundos ocupados en la linea de tiempo */
+		unsigned long long timeUsed;
 };
 
 #endif

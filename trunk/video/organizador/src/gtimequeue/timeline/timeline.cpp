@@ -47,9 +47,6 @@ bool GTQTimeLine::haveToPaint(QRect &rect, unsigned long long initMs)
 	/* vamos a guardar este rect para usarlo luego, y devolvemos siempre
 	 * true */
 	this->objRect = rect;
-	printf("***********************************************\n");
-	printf("initMs: %lld\n", initMs);
-	printf("***********************************************\n");
 	
 	return true;
 }
