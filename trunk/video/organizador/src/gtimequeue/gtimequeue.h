@@ -33,6 +33,7 @@
 #include "timeline.h"
 
 
+
 class GTimeQueue : public QWidget
 {
 	public:
@@ -165,12 +166,23 @@ class GTimeQueue : public QWidget
 		
 		/* Funciones que van a hacer un repaint de los diferentes
 		 * elementos segun el rectangulo especificado para cada zona.
+		 * NOTE: Estas funciones setean la printListObjects con los
+		 * 	elementos que querramos imprimir segun el sector
+		 * 	determinado.
 		 */
 		void repaintBox(void);
 		void repaintTriggers(void);
+		void repaintTimeLine(void);
 		void repaintTimePointer(void);
 		void repaintAll(void);
 		
+		/* Funcion que va a establecer las diferentes regiones (QRects)
+		 * donde se van a mostrar las diferentes partes segun el tamaño
+		 * de la pantalla.
+		 * NOTE: Usa los defines para establecer las regiones.
+		 */
+		void updateRegiones(void);
+		 
 		/* Funcion que pone un elemento detras de otro teniendo en 
 		 * cuenta que la lista esta ordenada de menor a mayor (en cuanto
 		 * a los comienzos en ms)
