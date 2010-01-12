@@ -2,52 +2,91 @@
 
 
 /*! ###			Funciones privadas			### */
-/* Funcion que se va a encargar de setear correctamente las
-* propiedades (scale, pos, etc) de cada uno de los elementos
-* ante alguna actualizacion (movimiento, reescala, etc) de 
-* la pantalla.
+
+/* Funciones que van a hacer un repaint de los diferentes
+* elementos segun el rectangulo especificado para cada zona.
+* NOTE: Estas funciones setean la printListObjects con los
+* 	elementos que querramos imprimir segun el sector
+* 	determinado.
 */
-void GTimeQueue::updateElements(void)
+void repaintBox(void)
 {
 	QList<GTQObject *>::iterator i;
-	QRect aux;
-	/* vamos a chequear que elementos deberian ser mostrados en pantalla
-	 * y que elementos no. por lo que vamos a vaciar la lista de elementos
-	 * actuales y agregamos de cero.
-	 */
 	
-	this->printObjList.clear();	/* limpiamos */
-	aux = this->rect();
+	/* limpiamos la lista de objetos a imprimir */
+	this->printObjList.clear();
+	
+	/* ahora le asignamos los elementos que queremos */
 	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i) {
-			if ((*i)->haveToPaint(aux, this->refPos.x()))
+			if ((*i)->haveToPaint(this->boxPaintRect, this->msRef))
 				/* si es un objeto que lo tenemos que mostrar =>
 				* lo agregamos a la lista de mostrables */
 				this->printObjList.append((*i));
 		}
-	
-	/* hacemos un repaint para actualizar la pantalla */
-	repaint();
+	/* ahora los dibujamos */
+	repaint(this->boxPaintRect);
 }
-
-
-/* funcion que mueve todos los elementos n milisegundos
-* desde un QList<GTQObject *>::iterator
-* REQUIRES:
-* 	i 	!= NULL
-*	end 	!= NULL
-*/
-void GTimeQueue::updateObjTimes(QList<GTQObject *>::iterator &i, 
-		     QList<GTQObject *>::iterator &end,
-		     unsigned long long n)
+void repaintTriggers(void)
 {
+	QList<GTQObject *>::iterator i;
 	
-	while (i != end) {
-		if (*i)
-			(*i)->setStartMs((*i)->getStartMs() + n);
-		++i;
-	}
+	/* limpiamos la lista de objetos a imprimir */
+	this->printObjList.clear();
+	
+	/* ahora le asignamos los elementos que queremos */
+	for (i = this->triggerObjectsList.begin(); i != this->triggerObjectsList.end(); ++i)
+		if (*i) {
+			if ((*i)->haveToPaint(this->triggerPaintRect, this->msRef))
+				/* si es un objeto que lo tenemos que mostrar =>
+				* lo agregamos a la lista de mostrables */
+				this->printObjList.append((*i));
+		}
+		/* ahora los dibujamos */
+	repaint(this->triggerPaintRect);
 }
+void repaintTimeLine(void)
+{
+	/* limpiamos la lista de objetos a imprimir */
+	this->printObjList.clear();
+	
+	/* la agregamos a la linea de tiempo */
+	this->printObjList.append(this->timeLine);
+	
+	repaint(this->linePaintRect);
+}
+void repaintTimePointer(void)
+{
+	/* limpiamos la lista de objetos a imprimir */
+	this->printObjList.clear();
+	
+	/* agregamos el o los punteros */
+	this->printObjList.append(this->timePointer);
+	
+	repaint(this->pointerPaintRect);
+}
+void repaintAll(void)
+{
+	/* lo hacemos facil */
+	repaintBox();
+	repaintTriggers();
+	repaintTimeLine();
+	repaintTimePointer();
+	
+	repaint(this->rect());
+}
+
+/* Funcion que va a establecer las diferentes regiones (QRects)
+* donde se van a mostrar las diferentes partes segun el tamaño
+* de la pantalla.
+* NOTE: Usa los defines para establecer las regiones.
+*/
+void updateRegiones(void)
+{
+	/*! TODO: establecer los porcentajes como defines */
+}
+
+
 
 /* Funcion que pone un elemento detras de otro teniendo en 
 * cuenta que la lista esta ordenada de menor a mayor (en cuanto
@@ -101,19 +140,22 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	this->scale = GTQ_NORMAL_SCALE;
 	
 	/* configuramos el punto de referencia de la linea de tiempo */
-	this->refPos.setX(0);
-	/* la vamos a posicionar 3/4 abajo del display */
-	this->refPos.setY((int)(this->height()/2));
-	/* TODO: ahora deberiamos insertar la linea de tiempo y el puntero
-	 * 	 que señalaria en que "tiempo" actual estamos... */
+	this->msRef = 0;
+	
+	/* configuramos las diferentes regiones */
+	updateRegiones();
+	
+	this->scale = 0;
+	setPointerMs(0);
+	
 	/*! aca deberiamos setear las configuraciones de la linea de tiempo,
 	 *  el estilo y esas cosas.. */ 
 	this->timeLine = new GTQTimeLine();
 	this->timeLine->setScale(this->scale);
 	this->timeLine->setStartMs(this->refPos.x());
 	this->timeLine->setColor(timeLineColor);
-	append(this->timeLine);
-	updateElements();
+	
+	/*! TODO: configurar / crear el timePointer */
 	
 }
 	
@@ -496,19 +538,36 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 	QList<GTQObject *>::iterator i;
 	
 	this->dispPainter.begin(this);
-	/* verificamos si tenemos una imagen de fondo que re-dibjar */
+	
+	/* verificamos si tenemos una imagen de fondo que re-dibjar, y solo
+	 * vamos a redibujar el sector correspondiente */
+	
 	if (this->backImg != NULL) {
-		/* redibujamos toda la pantalla */
-		this->dispPainter.drawImage(QPoint(0, 0), *this->backImg);
+		QRect normalizedRect;
+		
+		/* calculamos el rectangulo que deberiamos usar para extraer
+		 * la porcion deseada de la imagen */
+		normalizedRect.setWidth(this->backImg->width() *
+			event->rect().width() / this->rect().width());
+		normalizedRect.setHeigth(this->backImg->heigth() *
+			event->rect().heigth() / this->rect().heigth());
+		
+		/* redibujamos solo la parte que tenemos que actualizar */
+		this->dispPainter.drawImage(event->rect(), *this->backImg,
+					     normalizedRect);
 	} else {
 		/* si no dibujamos con el fondo de pantalla correspondiente */
-		/*!nada?*/
+		this->dispPainter.fillRect(event->rect(), this->backColor.base());
 	}
-	/* lo que hacemos en este caso es dibujar todos los elementos que tenemos
-	 * sobre nuestro display */
+	
+	/*! NOTE: aca debemos tener en cuenta que tenemos en printObjList los
+	 * 	 elementos que queremos que sean impresos. Estos van a ser
+	 * 	 seteados en las repaintXXX functions
+	 */
+	
 	for (i = this->printObjList.begin(); i != this->printObjList.end(); ++i)
 		/*! if (*i) esto es fucking seguro.. no puede ser NULL */
-		(*i)->paint(&this->dispPainter, this->refPos);
+		(*i)->paint(&this->dispPainter, event->rect(), this->msRef);
 	
 	this->dispPainter.end();
 }

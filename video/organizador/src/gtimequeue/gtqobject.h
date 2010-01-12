@@ -53,14 +53,13 @@ class GTQObject
 		 * graficar el objeto sobre la pantalla, esta funcion debe
 		 * ser redefinida en las herencias, para que cada una grafique
 		 * de forma correcta el objeto.
-		 * NOTE: en ref.y() tenemos la altura a ser dibujado el objeto
-		 * 	 mientras que en ref.x() tenemos en donde comienza la
-		 * 	 linea de tiempo (lo mas a la izquierda del rectangulo*
-		 * 	 donde vamos a dibujar).
+		 * NOTE: Debemos dibujar usando el painter dentro del rectangulo
+		 * 	dest.
 		 * REQUIRES: 
 		 * 	painter != NULL
 		 */
-		virtual void paint(QPainter *, QPoint &ref){};
+		virtual void paint(QPainter *, QRect &dest,
+				    unsigned long long msRef){};
 		
 		/*! Esta funcion determina si el objeto esta dentro del rectangulo
 		 * a ser impreso, osea, si tiene que ser pintado o no. Cada
