@@ -1,3 +1,9 @@
+/*! Esta clase representa la abstraccion de todos los objetos que pueden ser
+ *  dibujados en la linea de tiempo, vamos a tener una duracion, un punto
+ *  de comienzo (startMs) y una escala.
+ *  NOTE: Cuando cambiamos la escala de los objetos no vamos a modificar el
+ *  	  alto de los mismos.
+ */
 #ifndef GTQOBJECT_H
 #define GTQOBJECT_H
 
@@ -18,7 +24,7 @@ class GTQObject
 {
 	public:
 		/* Constructor, no vamos a pedir nada  */
-		GTQObject(void): backImg(NULL),label(""), layer(0) {};
+		GTQObject(void){};
 		
 		/* Esta funcion va a modificar el tamaño del objeto segun la
 		 * escala que se pase por parametro.
@@ -35,37 +41,13 @@ class GTQObject
 		/* ### ### ### Manipulacion de la duracion ### ### ### */
 		void setDurationMs(unsigned long long d) {this->durationMs = d;};
 		unsigned long long getDurationMs(void) {return this->durationMs;};
-		
-		/* ### ### ### Manipulacion del label ### ### ### */
-		QString & getLabel(void) {return this->label;};
-		
-		/* setea el label */
-		void setLabel(QString & nLabel) {this->label = nLabel;};
-		
-		
-		/* ### ### ### Manipulacion del layer ### ### ### */
-		int getLayer(void) {return this->layer;};
-		
-		/* setea el layer*/
-		void setLayer(int nLayer) {this->layer = nLayer;};
-		
+			
 		/* ### ### ### Manipulacion del color ### ### ### */
 		QColor & getColor(void) {return this->color;};
 		
-		/* setea el layer*/
+		/* setea el color */
 		void setColor(QColor & nColor) {this->color = nColor;};
 		
-		
-		/* Funcion que va a setear la imagen de fondo, si ya existe
-		 * alguna, sera eliminada (liberada la memoria) y se seteara
-		 * la nueva imagen.
-		 * REQUIRES:
-		 * 	si img != NULL && no liberar img una vez seteada
-		 * 	si img == NULL => solo borramos la anterior y seteamos
-		 * 			  ninguna imagen de fondo.
-		 * NOTE: si se libera la img tamos al horno
-		 */
-		void setBackImg(QImage * img);
 		
 		/*! Esta es la funcion principal, esta va a ser llamada para 
 		 * graficar el objeto sobre la pantalla, esta funcion debe
@@ -90,18 +72,25 @@ class GTQObject
 		 * 	false	caso contrario
 		 * NOTE: En general debemos hacer this->rect = nRect.
 		 */
-		virtual bool haveToPaint(QRect &, unsigned long long initMs){return true;};
+		virtual bool haveToPaint(QRect &, unsigned long long initMs)
+		{return true;};
 		 
 		/*! Funcion que va a determinar si un punto esta dentro del
 		 *  del objeto (en este caso es para determinar si el mouse
 		 *  esta sobre el objeto o no).
+		 *  NOTE: el punto va a ser las coordenadas dentro de la linea
+		 *  	  de tiempo, osea, x y de la ventana.
+		 *  	  Requiere ademas que el objeto este siendo mostrado por
+		 *  	  pantalla, osea que vamos a llamar a esta funcio si y
+		 *  	  solo si haveToPaint == true.
 		 *  REQUIRES:
-		 *  	p.isNull() != false
+		 *  	p.isNull() == false
+		 *  	havToPaint() == true
 		 *  RETURNS:
 		 *  	true	si el punto esta sobre el objeto
 		 *  	false	caso contrario
 		 */
-		bool havePoint(QPoint & p);
+		virtual bool havePoint(QPoint & p) {return true;};
 		
 		/* Vamos a definir el operador de comparacion '<' para poder
 		 * ordenarlos, segun el startMs. */
@@ -116,28 +105,14 @@ class GTQObject
 	protected:
 		/* Atributos */
 		
-		/* Imagen de fondo, puede ser Null o no. */
-		QImage * backImg;
 		/* milisegundo en el que empiza el objeto */
 		unsigned long long startMs;
 		/* milisegundos que dura el objeto en la linea de tiempo */
 		unsigned long long durationMs;
 		/* guardamos la escala por las dudas */
 		unsigned long long scale;
-		/* el nombre a mostrar o ninguno... */
-		QString label;
-		/* este va a determinar el layer, osea la prioridad de quien va
-		 * a ser dibujado antes  y quien despues. mientras mas layer
-		 * mas prioridad, osea, los de mayor layer van a ser dibujados
-		 * por encima de los de menor layer.
-		 */
-		int layer;
 		/* Color para setear al pen del painter. */
 		QColor color;
-		/* Rectangulo que ocupa el objeto, por ahora vamos a determinar
-		 * que todos los objetos estan dentro de un rectangulo para 
-		 * detectar colisiones. */
-		QRect objRect;
 
 };
 
