@@ -18,7 +18,7 @@ void GTimeQueue::updateElements(void)
 	
 	this->printObjList.clear();	/* limpiamos */
 	aux = this->rect();
-	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
+	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i) {
 			if ((*i)->haveToPaint(aux, this->refPos.x()))
 				/* si es un objeto que lo tenemos que mostrar =>
@@ -49,50 +49,42 @@ void GTimeQueue::updateObjTimes(QList<GTQObject *>::iterator &i,
 	}
 }
 
-/* Funcion que va a ordenar la linea de tiempo para evitar
-* posibles solapamientos entre distintos objetos.
+/* Funcion que pone un elemento detras de otro teniendo en 
+* cuenta que la lista esta ordenada de menor a mayor (en cuanto
+* a los comienzos en ms)
+* Lo que hace es sacar los posibles espacios en blanco y/o
+* solapamientos.
+* NOTE: tambien calculamos el tiempo total de reproduccion (timeUsed).
+
 */
-void GTimeQueue::ordinateElements(void)
+void ordinateElements(void)
 {
-	QList<GTQObject *>::iterator i, j, l, end;
-	unsigned long long dif = 0;
+	int i = 0;
+	int size = this->boxObjectsList.size()-1;
+	unsigned long long delta = 0;
+	unsigned long long totalTime = 0;
+	GTQObject *obj = NULL;
 	
-	/* si esta vacia la lista volvemos sin hacer nada */
-	if (this->objectsList.isEmpty())
-		return;
-	
-	/* no esta vacia, organizamos los elementos segun el comienzo de
-	 * de reproduccion. */
-	qSort(this->objectsList);
-	
-	/* ahora vamos a recorrer uno por uno verificando si existe algun
-	 * solapamiento, si lo existe corremos todos los posteriores el tiempo
-	 * del solapamiento y volvemos a verificar desde el siguiente elemento
-	 */
-	end = this->objectsList.end();
-	for (i = this->objectsList.begin(); i != end; ++i)
-		j = i;
-		++j;
-		if (*i && j != this->objectsList.end() && *j) {
-			/* en i tenemos el primer elemento, en j el 2, vemos
-			 * si hay solapamiento */
-			if (((*i)->getStartMs() + (*i)->getDurationMs()) >
-				(*j)->getStartMs()) {
-				
-				dif = (*i)->getStartMs() + 
-				(*i)->getDurationMs() - (*j)->getStartMs();
-				
-				/*! Si existe solapamiento => debemos correr
-				 * todos los posteriores, desde j en adelante
-				 * dif ms. */
-				l = j;
-				updateObjTimes(l,end, dif);
-			}
+	for (i = 0; i < size; i++) {
+		obj = this->boxObjectsList.at(i);
+		if (obj == NULL) {
+			debugp("Estamos teniendo un error, tenemos un elemento "
+				"nulo aca\n");
+			/* lo sacamos de la lista */
+			this->boxObjectsList.removeOne(obj);
+			continue;
 		}
-	
-	
-	
+		/* lo posicionamos donde corresponde */
+		obj->setStartMs(delta);
+		
+		/* calculamos el nuevo fin == comienzo del siguiente elemento */
+		delta = obj->getStartMs() + obj->getDurationMs();
+		totalTime += obj->getDurationMs();
+	}
+	this->timeUsed = totalTime;
 }
+
+
 
 /*! ###			Funciones publicas			### */
 
@@ -142,43 +134,208 @@ void GTimeQueue::setScale(unsigned long long scale)
 	/* si esta dentro de los rangos... seteamos */
 	this->scale = scale;
 	/* ahora para cada uno de los objetos hacemos lo mismo. */
-	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
+	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i)
 			(*i)->setScale(scale);
 	
 	updateElements();
 }
 
+/* funcion que setea el color de la linea de tiempo */
+void setTimeLineColor(QColor c)
+{
+	/*! TODO */
+}
+
+
 /* Funcion que agrega un elemento a la lista de objetos a ser
 * impresos por pantalla.
 * REQUIRES:
 * 	obj != NULL
+* 	obj !€ this->boxObjectsList
+* 	type(obj) == GTQObject
+* INVARIANTE:
+* 	Luego de agregar un objeto de este tipo, NO existe
+* 	la superposicion de estos elementos, y la lista
+* 	se mantiene ordenada segun el comienzo de cada elemento.
 * NOTE: El obj NO debe ser liberado, pertenece ahora aca.
 */
-void GTimeQueue::append(GTQObject *obj)
+void insertBoxObject(GTQObject *obj)
 {
+	unsigned long long actualStart = 0;
+	QList<GTQObject *>::iterator i;
+	int pos = 0;
+	
 	/* pre */
-	if(obj == NULL) {
+	if(obj == NULL || this->boxObjectsList.contains(obj)) {
 		ASSERT(obj != NULL);
+		/* estamos agregandolo 2 veces? */
+		ASSERT(this->boxObjectsList.contains(obj));
 		return;
 	}
 	
-	/* agregamos un elemento... */
-	this->objectsList.append(obj);
+	/* vamos a buscar cual es la posicion que le corresponde, una vez
+	 * encontrada la posicion vamos a insertarlo e iterar sobre los
+	 * demas elementos para establecer sus nuevos comienzos 
+	 */
+	actualStart = obj->getStartMs();
+	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
+		if (*i) {
+			/* verificamos quien va primero */
+			if ((*i)->getStartMs() <= actualStart)
+				pos++;
+			else
+				/* salimos, tenemos que insertarlo aca */
+				i = this->boxObjectsList.end(); /* == break; */
+		}
+	
+	/* ahora en pos debemos insertar el elemento */
+	ASSERT(pos <= this->boxObjectsList.size());
+	this->boxObjectsList.insert(pos, obj);
+	
 	/* seteamos la escala */
 	obj->setScale(this->scale);
 	
-	/* aumentamos el tiempo de reproduccion utilizado por la linea de tiempo
-	 */
-	this->timeUsed += obj->getDurationMs();
-	/* acomodamos la linea de tiempo */
-	/* TODO: podriamos revisar si realmente hay algun solapamiento antes
-	 * de llamar a esta funcion... */
-	//ordinateElements();
 	
-	
-	updateElements();
+	/* acomodamos la linea de tiempo actualizando todos los elementos
+	 * posteriores al recien insertado si y solo si el que acabamos
+	 * de insertar no fue metido al ultimo */
+	ordinateElements();
+	/* aca tenemos ya los elementos ordenados y actualizados */
+
+	/* dibujamos las cajas de nuevo */
+	repaintBox();
 }
+
+
+/* Funcion que va a mover un objeto determinado de la cola
+* a un tiempo especifico.
+* REQUIRES:
+* 	obj != NULL
+* 	obj € this->boxObjectsList
+* POST:
+* 	asegura que se mantenga ordenada la lista de objetos
+* 	y no haya sobreposicion de los mismos
+*/
+void moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
+{
+	
+	/* pre */
+	if (obj == NULL || !(this->boxObjectsList.contains(obj))) {
+		ASSERT(false);
+		return;
+	}
+	/* si pertenece entonces lo que vamos hacer es sacar el elemento de la
+	 * lista, ordenar los "boxs" e insertar de nuevo para mantener el orden
+	 * en la nueva posicion */
+	
+	/* lo eliminamos */
+	if (!this->boxObjectsList.removeOne(obj)) {
+		debugp("No pudimos mover el objeto....:S\n");
+		return;
+	}
+	/* ordenamos los elementos */
+	ordinateElements();
+	
+	/* modificamos su "comienzo" */
+	obj->setStartMs(newStartMs);
+	
+	/* lo re-insertamos como si fuese uno nuevo para mantener el orden */
+	insertBoxObject(obj);
+}
+
+/* Funcion que elimina un obj de la lista.
+* REQUIRES:
+* 	obj != NULL
+* 	obj € this->boxObjectsList
+* POST:
+* 	asegura que el ordenamiento de los elementos se mantenga
+* 	sin dejar un "hueco" de tiempo libre.
+* NOTE: se libera la memoria
+*/
+void removeBoxObject(GTQObject *obj)
+{
+	/* pre */
+	if (obj == NULL || !(this->boxObjectsList.contains(obj))) {
+		ASSERT(false);
+		return;
+	}
+	/* eliminamos el objeto de la lista y re-ordenamos los elementos */
+	this->boxObjectsList.removeOne(obj);
+	ordinateElements();
+	
+	/* verificamos si tenemos que eliminarlo de la printList */
+	if (this->printObjList.contains(obj))
+		this->printObjList.removeOne(obj);
+	
+	/* dibujamos de nuevo las cajas */
+	repaintBox();
+	
+	/* liberamos memoria */
+	delete obj; obj = NULL;
+	
+}
+
+/* Funcion que va a insertar un trigger
+* REQUIRES:
+* 	trig != NULL
+* 	trig !€ this->triggerObjectsList
+* NOTE: No debe ser liberada la memoria una vez insertado.
+*/
+void insertTriggerObject(GTQObject *trig)
+{
+	/* pres */
+	if (trig == NULL || this->triggerObjectsList.contains(trig)) {
+		ASSERT(false);
+		return;
+	}
+	/* agregamos el elemento a la lista, no importa el orden aca */
+	this->triggerObjectsList.append(trig);
+	repaintTrigger();
+}
+
+/* Funcion que elimina un trigger de la lista.
+* REQUIRES:
+* 	trig != NULL
+* 	trig € this->triggerObjectsList
+* NOTE: se libera la memoria
+*/
+void removeTriggerObject(GTQObject *trig)
+{
+	/* pres */
+	if (trig == NULL || !(this->triggerObjectsList.contains(trig))) {
+		ASSERT(false);
+		return;
+	}
+	this->triggerObjectsList.removeOne(trig);
+	
+	/* si se encuentra en la lista de elementos a pintar lo eliminamos */
+	if (this->printObjList.contains(trig))
+		this->printObjList.removeOne(trig);
+	
+	repaintTrigger();
+	
+	/* liberamos memoria */
+	delete trig; trig = NULL;
+	
+}
+
+/* funcion que va a setear el puntero a un tiempo en ms 
+* determinado */
+void setPointerMs(unsigned long long ms);
+
+/* Funcion que va a devolver la posicion actual de donde
+* comienza la linea de tiempo (lateral izquierdo), osea la
+* referencia
+*/
+unsigned long long getDisplayRef(void){return this->msRef;};
+
+/* Funcion que va a mover la referencia a un nuevo "tiempo"
+* (aca se actualiza que objetos vamos a mostrar y cuales
+* no)
+*/
+void setDisplayRef(unsigned long long ref);
+
 
 /* Funcion que elimina un obj de la lista.
 * REQUIRES:
@@ -193,7 +350,7 @@ void GTimeQueue::remove(GTQObject *obj)
 		return;
 	}
 	/* lo sacamos de las listas, ya que puede ser que este siendo graficado */
-	if (this->objectsList.removeOne(obj)) {
+	if (this->boxObjectsList.removeOne(obj)) {
 		/* si estaba aca puede que este aca */
 		this->printObjList.removeOne(obj);
 		
@@ -206,23 +363,7 @@ void GTimeQueue::remove(GTQObject *obj)
 	updateElements();
 	
 }
-/* auxiliar */
-void GTimeQueue::remove(int pos)
-{
-	GTQObject * obj = NULL;
-	
-	/* pre */
-	if(pos < 0 || pos >= this->objectsList.size()) {
-		ASSERT(false);
-		return;
-	}
-	/* ahora obtenemos el elemento i-esimo y lo eliminamos */
-	obj = this->objectsList.at(pos);
-	if (obj != NULL)
-		remove(obj);
-	
-	updateElements();
-}
+
 
 /* Funcion que obtiene un objeto determinado.
 * REQUIRES:
@@ -236,11 +377,11 @@ const GTQObject* GTimeQueue::getObject(int i)
 	GTQObject * obj = NULL;
 	
 	/* pre */
-	if(i < 0 || i >= this->objectsList.size()) {
+	if(i < 0 || i >= this->boxObjectsList.size()) {
 		ASSERT(false);
 		return NULL;
 	}
-	obj = this->objectsList.at(i);
+	obj = this->boxObjectsList.at(i);
 	
 	return obj;
 }
@@ -334,7 +475,7 @@ GTimeQueue::~GTimeQueue(void)
 	QList<GTQObject *>::iterator i;
 	
 	/* vamos a liberar cada uno de los objects */
-	for (i = this->objectsList.begin(); i != this->objectsList.end(); ++i)
+	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i)
 			delete *i;
 	
@@ -344,7 +485,7 @@ GTimeQueue::~GTimeQueue(void)
 	
 	/* borramos todo de las listas */
 	this->printObjList.clear();
-	this->objectsList.clear();
+	this->boxObjectsList.clear();
 }
 
 

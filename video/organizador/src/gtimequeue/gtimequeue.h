@@ -6,6 +6,12 @@
  *  Vamos a trabajar de la siguiente forma: La linea de tiempo va a comenzar
  *  en el milisegundo 0 y la escala mas chica de la misma son los milisegundos.
  *  El punto de referencia es los milisegundos en el eje X.
+ *  
+ *  Vamos a soportar 4 tipos de objetos mostrables:
+ *   1 - Cajas que van a representar las peliculas.
+ *   2 - Saltos, que van a ser los "triggers".
+ *   3 - Linea de tiempo.
+ *   4 - Puntero de tiempo actual.
  */
 #ifndef GTIMEQUEUE_H
 #define GTIMEQUEUE_H
@@ -50,40 +56,8 @@ class GTimeQueue : public QWidget
 		 */
 		void setScale(unsigned long long scale);
 		
-		/* Funcion que setea el factor de movimiento de la ventana */
-		void setStepMoveFactor(unsigned long long f){this->stepMoveFactor = f;};
-		
-		
 		/* Setea el color de fond */
 		void setBackColor(QPalette & color){this->backColor = color;};
-		
-		
-		/* Funcion que agrega un elemento a la lista de objetos a ser
-		 * impresos por pantalla.
-		 * REQUIRES:
-		 * 	obj != NULL
-		 * NOTE: El obj NO debe ser liberado, pertenece ahora aca.
-		 */
-		void append(GTQObject *obj);
-		
-		/* Funcion que elimina un obj de la lista.
-		* REQUIRES:
-		* 	obj != NULL
-		* NOTE: se libera la memoria
-		*/
-		void remove(GTQObject *obj);
-		/* auxiliar */
-		void remove(int pos);
-		
-		/* Funcion que obtiene un objeto determinado.
-		 * REQUIRES:
-		 * 	queueSize >= i >= 0
-		 * RETURNS:
-		 * 	GTQObject != 	NULL
-		 * 	NULL		si hubo error
-		 * NOTE: NO debe ser liberado el object
-		 */
-		const GTQObject* getObject(int i);
 		
 		
 		/* Funcion que va a setear la imagen de fondo, si ya existe
@@ -97,22 +71,79 @@ class GTimeQueue : public QWidget
 		*/
 		void setBackImg(QImage * img);
 		
-		/* Funcion que va a mover a derecha el visor de la cola.
-		 * Esto hace que el punto de referencia se mueva hacia izquierda
-		 * n lugares, donde n es la cantidad de pixeles que nos movemos
+		
+		
+		/* funcion que setea el color de la linea de tiempo */
+		void setTimeLineColor(QColor c);
+		
+		
+		/* Funcion que agrega un elemento a la lista de objetos a ser
+		 * impresos por pantalla.
 		 * REQUIRES:
-		 * 	n >= 0
+		 * 	obj != NULL
+		 * 	obj !€ this->boxObjectsList
+		 * 	type(obj) == GTQObject
+		 * INVARIANTE:
+		 * 	Luego de agregar un objeto de este tipo, NO existe
+		 * 	la superposicion de estos elementos, y la lista
+		 * 	se mantiene ordenada segun el comienzo de cada elemento.
+		 * NOTE: El obj NO debe ser liberado, pertenece ahora aca.
 		 */
-		void moveRigth(int n);
+		void insertBoxObject(GTQObject *obj);
 		
-		/* Funcion que va a mover a izquierda el visor de la cola.
-		* Esto hace que el punto de referencia se mueva hacia derecha
-		* n lugares, donde n es la cantidad de pixeles que nos movemos
+		/* Funcion que va a mover un objeto determinado de la cola
+		 * a un tiempo especifico.
+		 * REQUIRES:
+		 * 	obj != NULL
+		 * 	obj € this->boxObjectsList
+		 * POST:
+		 * 	asegura que se mantenga ordenada la lista de objetos
+		 * 	y no haya sobreposicion de los mismos
+		 */
+		void moveBoxObject(GTQObject *obj, unsigned long long newStartMs);
+		
+		/* Funcion que elimina un obj de la lista.
 		* REQUIRES:
-		* 	n >= 0
+		* 	obj != NULL
+		* 	obj € this->boxObjectsList
+		* POST:
+		* 	asegura que el ordenamiento de los elementos se mantenga
+		* 	sin dejar un "hueco" de tiempo libre.
+		* NOTE: se libera la memoria
 		*/
-		void moveLeft(int n);
+		void removeBoxObject(GTQObject *obj);
 		
+		/* Funcion que va a insertar un trigger
+		 * REQUIRES:
+		 * 	trig != NULL
+		 * 	trig !€ this->triggerObjectsList
+		 * NOTE: No debe ser liberada la memoria una vez insertado.
+		 */
+		void insertTriggerObject(GTQObject *trig);
+		
+		/* Funcion que elimina un trigger de la lista.
+		* REQUIRES:
+		* 	trig != NULL
+		* 	trig € this->triggerObjectsList
+		* NOTE: se libera la memoria
+		*/
+		void removeTriggerObject(GTQObject *trig);
+		
+		/* funcion que va a setear el puntero a un tiempo en ms 
+		 * determinado */
+		 void setPointerMs(unsigned long long ms);
+		 
+		 /* Funcion que va a devolver la posicion actual de donde
+		  * comienza la linea de tiempo (lateral izquierdo), osea la
+		  * referencia
+		  */
+		 unsigned long long getDisplayRef(void){return this->msRef;};
+		 
+		 /* Funcion que va a mover la referencia a un nuevo "tiempo"
+		  * (aca se actualiza que objetos vamos a mostrar y cuales
+		  * no)
+		  */
+		 void setDisplayRef(unsigned long long ref);
 		
 		/* Destructor */
 		~GTimeQueue(void);
@@ -131,34 +162,27 @@ class GTimeQueue : public QWidget
 		
 	private:
 		/* Funciones */
-		/* Funcion que se va a encargar de setear correctamente las
-		 * propiedades (scale, pos, etc) de cada uno de los elementos
-		 * ante alguna actualizacion (movimiento, reescala, etc) de 
-		 * la pantalla.
+		
+		/* Funciones que van a hacer un repaint de los diferentes
+		 * elementos segun el rectangulo especificado para cada zona.
 		 */
-		void updateElements(void);
+		void repaintBox(void);
+		void repaintTriggers(void);
+		void repaintTimePointer(void);
+		void repaintAll(void);
 		
-		/* funcion que mueve todos los elementos n milisegundos
-		* desde un QList<GTQObject *>::iterator
-		* REQUIRES:
-		* 	i 	!= NULL
-		* 	end != NULL
-		*/
-		void updateObjTimes(QList<GTQObject *>::iterator &i,
-				     QList<GTQObject *>::iterator &end,
-				     unsigned long long n);
-		
-		
-		/* Funcion que va a ordenar la linea de tiempo para evitar
-		 * posibles solapamientos entre distintos objetos.
+		/* Funcion que pone un elemento detras de otro teniendo en 
+		 * cuenta que la lista esta ordenada de menor a mayor (en cuanto
+		 * a los comienzos en ms)
+		 * Lo que hace es sacar los posibles espacios en blanco y/o
+		 * solapamientos
+		 * NOTE: tambien calculamos el tiempo total de reproduccion
+		 *  	 (timeUsed).
 		 */
 		void ordinateElements(void);
 		
 		/* Atributos */
 		
-		/* En esta QImage vamos a mostrar todo, sobre esta nos vamos
-		 * a basar, seria la "pizarra" */
-		QImage display;
 		/* El painter para nuestro display */
 		QPainter dispPainter;
 		/* Imagen de fondo, puede ser Null o no. */
@@ -166,26 +190,32 @@ class GTimeQueue : public QWidget
 		/* en caso de que no haya imagen de fondo vamos a pintar con el
 		 * color predeterminado. */
 		QPalette backColor;
-		/* Lista de objetos a ser mostrados */
-		QList<GTQObject *> objectsList;
+		/* Lista de objetos (cajas) a ser mostrados */
+		QList<GTQObject *> boxObjectsList;
+		/* lista de "triggers" a ser mostrados */
+		QList<GTQObject *> triggerObjectsList;
 		/* Lista de objetos que vamos a imprimir por pantalla. Esto es
 		 * para hacer mas eficiente la impresion.
 		 */
 		QList<GTQObject *> printObjList;
-		/* Posicion de referencia en cuanto al centro (esto va a servir
-		 * cuando movemos y/o hacemos zoom, para determinar la nueva
-		 * posicion de cada uno de los elementos a dibujar */
-		QPoint refPos;
+		/* Posicion de referencia de donde comienza a mostrarse la linea
+		 * de tiempo, es el lateral izquierdo*/
+		unsigned long long msRef;
 		/* es la cantidad de milisegundos por pixel, osea, cuantos ms
 		 * estan siendo representados en un solo pixel */
 		unsigned long long scale;
 		/* Linea de tiempo */
 		GTQTimeLine *timeLine;
-		/* tamaño del paso que vamos a mover la ventana de la linea de
-		 * tiempo, osea la cantidad de pixeles */
-		unsigned long long stepMoveFactor;
+		/*! TODO: GTQTimePointer *timePointer; */
 		/* cantidad de milisegundos ocupados en la linea de tiempo */
 		unsigned long long timeUsed;
+		/* ahora determinamos las zonas donde vamos a pintar las 
+		 * distintas partes de la linea de tiempo */
+		QRect boxPaintRect;
+		QRect linePaintRect;
+		QRect triggerPaintRect;
+		QRect pointerPaintRect;
+		
 };
 
 #endif
