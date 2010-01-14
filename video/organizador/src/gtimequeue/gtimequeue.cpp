@@ -9,7 +9,7 @@
 * 	elementos que querramos imprimir segun el sector
 * 	determinado.
 */
-void repaintBox(void)
+void GTimeQueue::repaintBox(void)
 {
 	QList<GTQObject *>::iterator i;
 	
@@ -27,7 +27,7 @@ void repaintBox(void)
 	/* ahora los dibujamos */
 	repaint(this->boxPaintRect);
 }
-void repaintTriggers(void)
+void GTimeQueue::repaintTriggers(void)
 {
 	QList<GTQObject *>::iterator i;
 	
@@ -45,7 +45,7 @@ void repaintTriggers(void)
 		/* ahora los dibujamos */
 	repaint(this->triggerPaintRect);
 }
-void repaintTimeLine(void)
+void GTimeQueue::repaintTimeLine(void)
 {
 	/* limpiamos la lista de objetos a imprimir */
 	this->printObjList.clear();
@@ -55,7 +55,7 @@ void repaintTimeLine(void)
 	
 	repaint(this->linePaintRect);
 }
-void repaintTimePointer(void)
+void GTimeQueue::repaintTimePointer(void)
 {
 	/* limpiamos la lista de objetos a imprimir */
 	this->printObjList.clear();
@@ -65,7 +65,7 @@ void repaintTimePointer(void)
 	
 	repaint(this->pointerPaintRect);
 }
-void repaintAll(void)
+void GTimeQueue::repaintAll(void)
 {
 	/* lo hacemos facil */
 	repaintBox();
@@ -81,9 +81,42 @@ void repaintAll(void)
 * de la pantalla.
 * NOTE: Usa los defines para establecer las regiones.
 */
-void updateRegiones(void)
+void GTimeQueue::updateRegiones(void)
 {
-	/*! TODO: establecer los porcentajes como defines */
+	int winWidth = this->rect().width();
+	int winHeight = this->rect().height();
+	
+	
+	/* ahora calculamos para cada uno el tamaño relativo segun el tamaño
+	 * de la pantalla. veamos que el ancho es toda la pantalla. */
+	
+	this->boxPaintRect.setWidth(winWidth);
+	/* calculamos la altura del rectangulo */
+	this->boxPaintRect.setHeight(winHeight * GTQ_BOXS_SIZE / 100);
+	/* lo posicionamos donde corresponde */
+	this->boxPaintRect.moveTop(winHeight * GTQ_FST_BLANK / 100);
+	
+	/* ahora vamos al time line */
+	this->linePaintRect.setWidth(winWidth);
+	/* calculamos la altura del rectangulo */
+	this->linePaintRect.setHeight(winHeight * GTQ_TIMELINE_SIZE / 100);
+	/* lo posicionamos donde corresponde */
+	this->linePaintRect.moveTop(this->boxPaintRect.bottom());
+	
+	/* ahora los triggers */
+	this->triggerPaintRect.setWidth(winWidth);
+	/* calculamos la altura del rectangulo */
+	this->triggerPaintRect.setHeight(winHeight * GTQ_TRIGGERS_SIZE / 100);
+	/* lo posicionamos donde corresponde */
+	this->triggerPaintRect.moveTop(this->linePaintRect.bottom());
+	
+	/* ahora el timer pointer */
+	this->pointerPaintRect.setWidth(winWidth);
+	/* calculamos la altura del rectangulo */
+	this->pointerPaintRect.setHeight(winHeight * GTQ_TIMEPOINTER_SIZE / 100);
+	/* lo posicionamos donde corresponde */
+	this->pointerPaintRect.moveTop(this->triggerPaintRect.bottom());
+	
 }
 
 
@@ -96,10 +129,10 @@ void updateRegiones(void)
 * NOTE: tambien calculamos el tiempo total de reproduccion (timeUsed).
 
 */
-void ordinateElements(void)
+void GTimeQueue::ordinateElements(void)
 {
 	int i = 0;
-	int size = this->boxObjectsList.size()-1;
+	int size = this->boxObjectsList.size();
 	unsigned long long delta = 0;
 	unsigned long long totalTime = 0;
 	GTQObject *obj = NULL;
@@ -111,6 +144,7 @@ void ordinateElements(void)
 				"nulo aca\n");
 			/* lo sacamos de la lista */
 			this->boxObjectsList.removeOne(obj);
+			this->allObjList.removeOne(obj);
 			continue;
 		}
 		/* lo posicionamos donde corresponde */
@@ -142,24 +176,37 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	/* configuramos el punto de referencia de la linea de tiempo */
 	this->msRef = 0;
 	
+	/* inicializamos las listas */
+	this->boxObjectsList.clear();
+	this->triggerObjectsList.clear();
+	this->printObjList.clear();	
+	this->allObjList.clear();
+	
 	/* configuramos las diferentes regiones */
 	updateRegiones();
 	
-	this->scale = 0;
-	setPointerMs(0);
+	this->scale = GTQ_NORMAL_SCALE;
 	
 	/*! aca deberiamos setear las configuraciones de la linea de tiempo,
 	 *  el estilo y esas cosas.. */ 
 	this->timeLine = new GTQTimeLine();
 	this->timeLine->setScale(this->scale);
-	this->timeLine->setStartMs(this->refPos.x());
+	this->timeLine->setStartMs(this->msRef);
 	this->timeLine->setColor(timeLineColor);
+	this->timeLine->setScale(this->scale);
+	this->allObjList.append(timeLine);
 	
 	/*! TODO: configurar / crear el timePointer */
-	
+	this->timePointer = new GTQTimePointer(0, 10);
+	this->timePointer->setScale(this->scale);
+	this->allObjList.append(timePointer);
 }
-	
-	
+
+/* funcion que devuelve el tamaño que deben tener las cajas */
+int GTimeQueue::getBoxHeigth(void)
+{
+	return (this->rect().height() * GTQ_BOXS_SIZE / 100);
+}
 
 /* Setea la escala, si esta fuera dentro de los rangos 
 * especificados no hace nada
@@ -180,13 +227,13 @@ void GTimeQueue::setScale(unsigned long long scale)
 		if (*i)
 			(*i)->setScale(scale);
 	
-	updateElements();
+	
 }
 
 /* funcion que setea el color de la linea de tiempo */
-void setTimeLineColor(QColor c)
+void GTimeQueue::setTimeLineColor(QColor c)
 {
-	/*! TODO */
+	this->timeLine->setColor(c);
 }
 
 
@@ -200,9 +247,8 @@ void setTimeLineColor(QColor c)
 * 	Luego de agregar un objeto de este tipo, NO existe
 * 	la superposicion de estos elementos, y la lista
 * 	se mantiene ordenada segun el comienzo de cada elemento.
-* NOTE: El obj NO debe ser liberado, pertenece ahora aca.
 */
-void insertBoxObject(GTQObject *obj)
+void GTimeQueue::insertBoxObject(GTQObject *obj)
 {
 	unsigned long long actualStart = 0;
 	QList<GTQObject *>::iterator i;
@@ -226,14 +272,20 @@ void insertBoxObject(GTQObject *obj)
 			/* verificamos quien va primero */
 			if ((*i)->getStartMs() <= actualStart)
 				pos++;
-			else
+			else {
 				/* salimos, tenemos que insertarlo aca */
 				i = this->boxObjectsList.end(); /* == break; */
+				break;
+			}
 		}
 	
 	/* ahora en pos debemos insertar el elemento */
 	ASSERT(pos <= this->boxObjectsList.size());
 	this->boxObjectsList.insert(pos, obj);
+	
+	/* si no esta en la lista lo agregamos */
+	if (!this->allObjList.contains(obj))
+		this->allObjList.append(obj);
 	
 	/* seteamos la escala */
 	obj->setScale(this->scale);
@@ -259,7 +311,7 @@ void insertBoxObject(GTQObject *obj)
 * 	asegura que se mantenga ordenada la lista de objetos
 * 	y no haya sobreposicion de los mismos
 */
-void moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
+void GTimeQueue::moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
 {
 	
 	/* pre */
@@ -293,9 +345,8 @@ void moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
 * POST:
 * 	asegura que el ordenamiento de los elementos se mantenga
 * 	sin dejar un "hueco" de tiempo libre.
-* NOTE: se libera la memoria
 */
-void removeBoxObject(GTQObject *obj)
+void GTimeQueue::removeBoxObject(GTQObject *obj)
 {
 	/* pre */
 	if (obj == NULL || !(this->boxObjectsList.contains(obj))) {
@@ -310,21 +361,20 @@ void removeBoxObject(GTQObject *obj)
 	if (this->printObjList.contains(obj))
 		this->printObjList.removeOne(obj);
 	
+	/* lo eliminamos de la lista completa */
+	if (this->allObjList.contains(obj))
+		this->allObjList.removeOne(obj);
+	
 	/* dibujamos de nuevo las cajas */
 	repaintBox();
-	
-	/* liberamos memoria */
-	delete obj; obj = NULL;
-	
 }
 
 /* Funcion que va a insertar un trigger
 * REQUIRES:
 * 	trig != NULL
 * 	trig !€ this->triggerObjectsList
-* NOTE: No debe ser liberada la memoria una vez insertado.
 */
-void insertTriggerObject(GTQObject *trig)
+void GTimeQueue::insertTriggerObject(GTQObject *trig)
 {
 	/* pres */
 	if (trig == NULL || this->triggerObjectsList.contains(trig)) {
@@ -333,16 +383,21 @@ void insertTriggerObject(GTQObject *trig)
 	}
 	/* agregamos el elemento a la lista, no importa el orden aca */
 	this->triggerObjectsList.append(trig);
-	repaintTrigger();
+	trig->setScale(this->scale);
+	
+	/* lo agregamos a la lista completa */
+	if (!this->allObjList.contains(trig))
+		this->allObjList.append(trig);
+	
+	repaintTriggers();
 }
 
 /* Funcion que elimina un trigger de la lista.
 * REQUIRES:
 * 	trig != NULL
 * 	trig € this->triggerObjectsList
-* NOTE: se libera la memoria
 */
-void removeTriggerObject(GTQObject *trig)
+void GTimeQueue::removeTriggerObject(GTQObject *trig)
 {
 	/* pres */
 	if (trig == NULL || !(this->triggerObjectsList.contains(trig))) {
@@ -355,77 +410,31 @@ void removeTriggerObject(GTQObject *trig)
 	if (this->printObjList.contains(trig))
 		this->printObjList.removeOne(trig);
 	
-	repaintTrigger();
+	/* lo scamos de la lista completa */
+	if (this->allObjList.contains(trig))
+		this->allObjList.removeOne(trig);
 	
-	/* liberamos memoria */
-	delete trig; trig = NULL;
+	repaintTriggers();
 	
 }
 
 /* funcion que va a setear el puntero a un tiempo en ms 
 * determinado */
-void setPointerMs(unsigned long long ms);
-
-/* Funcion que va a devolver la posicion actual de donde
-* comienza la linea de tiempo (lateral izquierdo), osea la
-* referencia
-*/
-unsigned long long getDisplayRef(void){return this->msRef;};
+void GTimeQueue::setPointerMs(unsigned long long ms)
+{
+	this->timePointer->setPos(ms);
+}
 
 /* Funcion que va a mover la referencia a un nuevo "tiempo"
 * (aca se actualiza que objetos vamos a mostrar y cuales
 * no)
 */
-void setDisplayRef(unsigned long long ref);
-
-
-/* Funcion que elimina un obj de la lista.
-* REQUIRES:
-* 	obj != NULL
-* NOTE: se libera la memoria
-*/
-void GTimeQueue::remove(GTQObject *obj)
+void GTimeQueue::setDisplayRef(unsigned long long ref)
 {
-	/* pre */
-	if(obj == NULL) {
-		ASSERT(obj != NULL);
-		return;
-	}
-	/* lo sacamos de las listas, ya que puede ser que este siendo graficado */
-	if (this->boxObjectsList.removeOne(obj)) {
-		/* si estaba aca puede que este aca */
-		this->printObjList.removeOne(obj);
-		
-		/* decrementamos el tiempo total utilizado por la linea de 
-		 * tiempo */
-		this->timeUsed -= obj->getDurationMs();
-	}
-	/* liberamos memoria */
-	delete obj;
-	updateElements();
+	this->msRef = ref;
 	
-}
-
-
-/* Funcion que obtiene un objeto determinado.
-* REQUIRES:
-* 	queueSize >= i >= 0
-* RETURNS:
-* 	GTQObject != NULL
-* NOTE: NO debe ser liberado el object
-*/
-const GTQObject* GTimeQueue::getObject(int i)
-{
-	GTQObject * obj = NULL;
-	
-	/* pre */
-	if(i < 0 || i >= this->boxObjectsList.size()) {
-		ASSERT(false);
-		return NULL;
-	}
-	obj = this->boxObjectsList.at(i);
-	
-	return obj;
+	/* ahora actualizamos que objetos vamos a mostrar y cuales no */
+	repaintAll(); /* con esto alcanza */
 }
 
 
@@ -447,79 +456,10 @@ void GTimeQueue::setBackImg(QImage * img)
 }
 
 
-/* Funcion que va a mover a derecha el visor de la cola.
-* Esto hace que el punto de referencia se mueva hacia izquierda
-* n lugares, donde n es la cantidad de pixeles que nos movemos
-* REQUIRES:
-* 	n >= 0
-*/
-void GTimeQueue::moveRigth(int n)
-{
-	QList<GTQObject *>::iterator i;
-	unsigned long long ms = 0;
-	
-	if(n < 0) {
-		/* no esta dentro de los rangos posibles */
-		debugp("Movimiento a derecha incorrecto\n");
-		return;
-	}
-	
-	/* si nos vamos a mover a la derecha debemos ver que no estamos saliendo
-	 * de las 24 hs, osea que debemos ver que la cantidad de pixeles
-	 * que nos vamos a mover no deba superar los GTQ_MAX_MS_SUPPORTED ms
-	 */
-	
-	/* primero calculamos la cantidad de milisegundos que nos vamos a mover
-	 * teniendo en cuenta la escala y n. */
-	ms = n * this->scale;
-	/* TODO: overflow? */
-	/* ahora verificamos si nos vamos al chori o no */
-	if ((unsigned long long) (ms + this->refPos.x()) > GTQ_MAX_MS_SUPPORTED)
-		return; /* no nos podemos mover mas */
-	/* else */
-	this->refPos.rx() += ms;
-	
-	updateElements();
-}
-/* Funcion que va a mover a izquierda el visor de la cola.
-* Esto hace que el punto de referencia se mueva hacia derecha
-* n lugares, donde n es la cantidad de pixeles que nos movemos
-* REQUIRES:
-* 	n >= 0
-*/
-void GTimeQueue::moveLeft(int n)
-{
-	QList<GTQObject *>::iterator i;
-	unsigned long long ms = 0;
-	
-	if(n < 0) {
-		/* no esta dentro de los rangos posibles */
-		debugp("Movimiento a izquierda incorrecto\n");
-		return;
-	}
-	
-	ms = n * this->scale;
-	/* TODO: overflow? */
-	/* ahora verificamos si nos vamos al chori o no */
-	if ((int)(this->refPos.x() - ms) < 0) {
-		return; /* no nos podemos mover mas */
-	}
-	/* else */
-	this->refPos.rx() -= ms;
-	
-	
-	updateElements();
-}
 
 /* Destructor */
 GTimeQueue::~GTimeQueue(void)
 {
-	QList<GTQObject *>::iterator i;
-	
-	/* vamos a liberar cada uno de los objects */
-	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
-		if (*i)
-			delete *i;
 	
 	/* ahora vamos a liberar la imagen de fondo si es que la hay */
 	if (this->backImg != NULL)
@@ -528,6 +468,7 @@ GTimeQueue::~GTimeQueue(void)
 	/* borramos todo de las listas */
 	this->printObjList.clear();
 	this->boxObjectsList.clear();
+	this->allObjList.clear();
 }
 
 
@@ -549,8 +490,8 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 		 * la porcion deseada de la imagen */
 		normalizedRect.setWidth(this->backImg->width() *
 			event->rect().width() / this->rect().width());
-		normalizedRect.setHeigth(this->backImg->heigth() *
-			event->rect().heigth() / this->rect().heigth());
+		normalizedRect.setHeight(this->backImg->height() *
+			event->rect().height() / this->rect().height());
 		
 		/* redibujamos solo la parte que tenemos que actualizar */
 		this->dispPainter.drawImage(event->rect(), *this->backImg,
@@ -564,10 +505,16 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 	 * 	 elementos que queremos que sean impresos. Estos van a ser
 	 * 	 seteados en las repaintXXX functions
 	 */
-	
 	for (i = this->printObjList.begin(); i != this->printObjList.end(); ++i)
 		/*! if (*i) esto es fucking seguro.. no puede ser NULL */
 		(*i)->paint(&this->dispPainter, event->rect(), this->msRef);
+	
+	/* ahora dibujamos la linea de tiempo y el puntero */
+	this->timeLine->paint(&this->dispPainter, event->rect(), this->msRef);
+	
+	if (this->timePointer->haveToPaint(event->rect(), this->msRef))
+		this->timePointer->paint(&this->dispPainter, event->rect(),
+					  this->msRef);
 	
 	this->dispPainter.end();
 }
@@ -575,21 +522,6 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 
 void GTimeQueue::resizeEvent(QResizeEvent *event)
 {
-	updateElements();
+	updateRegiones();
 }
 
-
-void GTimeQueue::keyPressEvent ( QKeyEvent * event )
-{
-	switch (event->key()) {
-		case Qt::Key_Right:
-			moveRigth(5);
-			printf("Moviendo Derecha\n");
-			break;
-		
-		case Qt::Key_Left:
-			moveLeft(5);
-			printf("Moviendo Izq\n");
-			break;
-	}
-}

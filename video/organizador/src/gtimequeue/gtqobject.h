@@ -58,7 +58,7 @@ class GTQObject
 		 * REQUIRES: 
 		 * 	painter != NULL
 		 */
-		virtual void paint(QPainter *, QRect &dest,
+		virtual void paint(QPainter *, const QRect &dest,
 				    unsigned long long msRef){};
 		
 		/*! Esta funcion determina si el objeto esta dentro del rectangulo
@@ -71,7 +71,7 @@ class GTQObject
 		 * 	false	caso contrario
 		 * NOTE: En general debemos hacer this->rect = nRect.
 		 */
-		virtual bool haveToPaint(QRect &, unsigned long long initMs)
+		virtual bool haveToPaint(const QRect &, unsigned long long initMs)
 		{return true;};
 		 
 		/*! Funcion que va a determinar si un punto esta dentro del

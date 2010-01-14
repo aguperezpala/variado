@@ -31,6 +31,19 @@
 #include "debug.h"
 #include "gtqobject.h"
 #include "timeline.h"
+#include "timepointer.h"
+
+/*! Definimos las diferentes regiones donde vamos a mostrar las cosas en % */
+/* dejamos un espacio en blanco al principio */
+#define GTQ_FST_BLANK		12
+/* ahora definimos el tamaño de las cajas */
+#define GTQ_BOXS_SIZE		35
+/* definimos donde va a ir la linea de tiempo y que tamaño va a tener */
+#define GTQ_TIMELINE_SIZE	10
+/* el espacio donde van a ir los triggers */
+#define GTQ_TRIGGERS_SIZE	33
+/* donde va a ir el puntero de tiempo */
+#define GTQ_TIMEPOINTER_SIZE	10
 
 
 
@@ -42,6 +55,8 @@ class GTimeQueue : public QWidget
 		*/
 		GTimeQueue (void);
 		
+		/* funcion que devuelve el tamaño que deben tener las cajas */
+		int getBoxHeigth(void);
 		
 		/* Funcion que devuelve la cantidad de milisegundos que estan
 		 * ocupados en la linea de tiempo.
@@ -88,7 +103,6 @@ class GTimeQueue : public QWidget
 		 * 	Luego de agregar un objeto de este tipo, NO existe
 		 * 	la superposicion de estos elementos, y la lista
 		 * 	se mantiene ordenada segun el comienzo de cada elemento.
-		 * NOTE: El obj NO debe ser liberado, pertenece ahora aca.
 		 */
 		void insertBoxObject(GTQObject *obj);
 		
@@ -110,7 +124,6 @@ class GTimeQueue : public QWidget
 		* POST:
 		* 	asegura que el ordenamiento de los elementos se mantenga
 		* 	sin dejar un "hueco" de tiempo libre.
-		* NOTE: se libera la memoria
 		*/
 		void removeBoxObject(GTQObject *obj);
 		
@@ -118,7 +131,6 @@ class GTimeQueue : public QWidget
 		 * REQUIRES:
 		 * 	trig != NULL
 		 * 	trig !€ this->triggerObjectsList
-		 * NOTE: No debe ser liberada la memoria una vez insertado.
 		 */
 		void insertTriggerObject(GTQObject *trig);
 		
@@ -126,7 +138,6 @@ class GTimeQueue : public QWidget
 		* REQUIRES:
 		* 	trig != NULL
 		* 	trig € this->triggerObjectsList
-		* NOTE: se libera la memoria
 		*/
 		void removeTriggerObject(GTQObject *trig);
 		
@@ -157,7 +168,7 @@ class GTimeQueue : public QWidget
 		void mouseReleaseEvent(QMouseEvent *event);*/
 		void paintEvent(QPaintEvent *event);
 		/*! para debug momentaneamente */
-		void keyPressEvent( QKeyEvent * event );
+		/*void keyPressEvent( QKeyEvent * event );*/
 		void resizeEvent(QResizeEvent *event);
 
 		
@@ -207,9 +218,10 @@ class GTimeQueue : public QWidget
 		/* lista de "triggers" a ser mostrados */
 		QList<GTQObject *> triggerObjectsList;
 		/* Lista de objetos que vamos a imprimir por pantalla. Esto es
-		 * para hacer mas eficiente la impresion.
-		 */
+		 * para hacer mas eficiente la impresion. */
 		QList<GTQObject *> printObjList;
+		/* lista de todos los elementos */
+		QList<GTQObject *> allObjList;
 		/* Posicion de referencia de donde comienza a mostrarse la linea
 		 * de tiempo, es el lateral izquierdo*/
 		unsigned long long msRef;
@@ -218,7 +230,7 @@ class GTimeQueue : public QWidget
 		unsigned long long scale;
 		/* Linea de tiempo */
 		GTQTimeLine *timeLine;
-		/*! TODO: GTQTimePointer *timePointer; */
+		GTQTimePointer *timePointer;
 		/* cantidad de milisegundos ocupados en la linea de tiempo */
 		unsigned long long timeUsed;
 		/* ahora determinamos las zonas donde vamos a pintar las 
