@@ -2,11 +2,10 @@
 #define GTQTIMELINE_H
 
 /* librerias generales */
-#include <QImage>
 #include <QPainter>
-#include <QString>
 #include <QPoint>
 #include <QRect>
+#include <QColor>
 
 /* librerias propias */
 #include "gtqobject.h"
@@ -35,15 +34,14 @@ class GTQTimeLine : public GTQObject
 		* REQUIRES: 
 		* 	painter != NULL
 		*/
-		void paint(QPainter * painter, QPoint &ref);
+		void paint(QPainter *, const QRect &dest, unsigned long long msRef);
 		
 		/*! Siempre vamos a devolver true, siempre queremos mostrar
 		*   la linea de tiempo...
 		* RETURNS:
 		* 	true	si tiene que ser pintado
 		*/
-		bool haveToPaint(QRect &rect,  unsigned long long initMs);
-		
+		bool haveToPaint(const QRect &rect,  unsigned long long initMs);
 		
 		/* Destructor */
 		~GTQTimeLine();
@@ -53,7 +51,6 @@ class GTQTimeLine : public GTQObject
 	private:
 		/* Atributos */
 		
-
 };
 
 #endif

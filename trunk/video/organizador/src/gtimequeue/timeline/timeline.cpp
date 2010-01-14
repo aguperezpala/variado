@@ -24,7 +24,8 @@ void GTQTimeLine::setScale(unsigned long long scale)
 * REQUIRES: 
 * 	painter != NULL
 */
-void GTQTimeLine::paint(QPainter * painter, QPoint &ref)
+void GTQTimeLine::paint(QPainter *painter, const QRect &dest, 
+			 unsigned long long msRef)
 {
 	/* TODO: Tenemos que reimplementar eso modularizandola probablemente
 	 * en una funcion auxiliar para tener en cuenta distintos estilos.
@@ -32,9 +33,8 @@ void GTQTimeLine::paint(QPainter * painter, QPoint &ref)
 	
 	/*! por el momento dibujamos una linea recta. */
 	painter->setPen(this->color);
-	painter->drawText(ref, QString("linea de tiempo"));
-	painter->drawLine(this->objRect.left(), ref.y(),
-			   this->objRect.right(), ref.y());
+	painter->drawLine(dest.left(), dest.bottom(),
+			   dest.right(), dest.bottom());
 }
 
 /*! Siempre vamos a devolver true, siempre queremos mostrar
@@ -42,11 +42,8 @@ void GTQTimeLine::paint(QPainter * painter, QPoint &ref)
 * RETURNS:
 * 	true	si tiene que ser pintado
 */
-bool GTQTimeLine::haveToPaint(QRect &rect, unsigned long long initMs)
+bool GTQTimeLine::haveToPaint(const QRect &rect, unsigned long long initMs)
 {
-	/* vamos a guardar este rect para usarlo luego, y devolvemos siempre
-	 * true */
-	this->objRect = rect;
 	
 	return true;
 }
