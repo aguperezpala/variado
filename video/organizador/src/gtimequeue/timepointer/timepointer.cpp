@@ -34,12 +34,18 @@ void GTQTimePointer::paint(QPainter *painter, const QRect &dest, unsigned long l
 	painter->setPen(this->color);
 	
 	/* obtenemos en que posicion debemos dibujar el puntero */
-	pixelPos = (int) ((this->pos - msRef) / dest.width());
+	pixelPos = (int) ((this->pos - msRef) / this->scale);
 	
 	/* ahora lo dibujamos */
 	aux.setWidth(this->width);
 	aux.moveLeft(pixelPos - (this->width / 2));
+	aux.moveTop(dest.top());
 	painter->drawArc(aux, 225, 315);
+	painter->drawText(dest, Qt::AlignCenter, QString("Time pointer"));
+	
+	printf("TIMEPOINTER RECT: topleft(x,y):(%d,%d)\tbottomRigth (%d,%d)\n",
+		dest.left(),dest.top(),
+		dest.right(), dest.bottom());
 	
 }
 

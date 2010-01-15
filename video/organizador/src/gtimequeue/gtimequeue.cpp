@@ -3,6 +3,29 @@
 
 /*! ###			Funciones privadas			### */
 
+
+/* func auxiliar que va a agregar un par a la lista de pares 
+* si y solo si no fue agregada anteriormente
+*/
+void GTimeQueue::addPair(QRect &rect, QList<GTQObject *>* list)
+{
+	QPair<QRect &, QList<GTQObject *>*>* pair = NULL;
+	QList<QPair<QRect &, QList<GTQObject *>*>* >::iterator i;
+	
+	/* verificamos primero que el par que queremos agregar NO este en la
+	 * lista */
+	for (i = this->pairList.begin(); i != this->pairList.end(); ++i)
+		if (*i && ((*i)->first == rect))
+			/* ya fue agregado nos vamos al chori */
+			return;
+	
+	/* no fue agregado ==> */
+	pair = new QPair<QRect &, QList<GTQObject *>*>(rect, list);
+	if (pair)
+		this->pairList.append(pair);
+}
+
+
 /* Funciones que van a hacer un repaint de los diferentes
 * elementos segun el rectangulo especificado para cada zona.
 * NOTE: Estas funciones setean la printListObjects con los
@@ -11,69 +34,34 @@
 */
 void GTimeQueue::repaintBox(void)
 {
-	QList<GTQObject *>::iterator i;
-	
-	/* limpiamos la lista de objetos a imprimir */
-	this->printObjList.clear();
-	
-	/* ahora le asignamos los elementos que queremos */
-	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
-		if (*i) {
-			if ((*i)->haveToPaint(this->boxPaintRect, this->msRef))
-				/* si es un objeto que lo tenemos que mostrar =>
-				* lo agregamos a la lista de mostrables */
-				this->printObjList.append((*i));
-		}
-	/* ahora los dibujamos */
-	repaint(this->boxPaintRect);
+	addPair(this->boxPaintRect, &this->boxObjectsList);
+	update(this->boxPaintRect);
 }
 void GTimeQueue::repaintTriggers(void)
 {
-	QList<GTQObject *>::iterator i;
-	
-	/* limpiamos la lista de objetos a imprimir */
-	this->printObjList.clear();
-	
-	/* ahora le asignamos los elementos que queremos */
-	for (i = this->triggerObjectsList.begin(); i != this->triggerObjectsList.end(); ++i)
-		if (*i) {
-			if ((*i)->haveToPaint(this->triggerPaintRect, this->msRef))
-				/* si es un objeto que lo tenemos que mostrar =>
-				* lo agregamos a la lista de mostrables */
-				this->printObjList.append((*i));
-		}
-		/* ahora los dibujamos */
-	repaint(this->triggerPaintRect);
+	addPair(this->triggerPaintRect, &(this->triggerObjectsList));
+	update(this->triggerPaintRect);
 }
 void GTimeQueue::repaintTimeLine(void)
-{
-	/* limpiamos la lista de objetos a imprimir */
-	this->printObjList.clear();
-	
-	/* la agregamos a la linea de tiempo */
-	this->printObjList.append(this->timeLine);
-	
-	repaint(this->linePaintRect);
+{	
+	addPair(this->linePaintRect, &this->lineObjList);
+	update(this->linePaintRect);
 }
 void GTimeQueue::repaintTimePointer(void)
-{
-	/* limpiamos la lista de objetos a imprimir */
-	this->printObjList.clear();
-	
-	/* agregamos el o los punteros */
-	this->printObjList.append(this->timePointer);
-	
-	repaint(this->pointerPaintRect);
+{	
+	addPair(this->pointerPaintRect, &this->timePointerObjList);
+	update(this->pointerPaintRect);
 }
 void GTimeQueue::repaintAll(void)
 {
 	/* lo hacemos facil */
-	repaintBox();
+	
 	repaintTriggers();
 	repaintTimeLine();
+	repaintBox();
 	repaintTimePointer();
 	
-	repaint(this->rect());
+	
 }
 
 /* Funcion que va a establecer las diferentes regiones (QRects)
@@ -94,28 +82,28 @@ void GTimeQueue::updateRegiones(void)
 	/* calculamos la altura del rectangulo */
 	this->boxPaintRect.setHeight(winHeight * GTQ_BOXS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->boxPaintRect.moveTop(winHeight * GTQ_FST_BLANK / 100);
+	this->boxPaintRect.moveTopLeft(QPoint(0,winHeight * GTQ_FST_BLANK / 100));
 	
 	/* ahora vamos al time line */
 	this->linePaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->linePaintRect.setHeight(winHeight * GTQ_TIMELINE_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->linePaintRect.moveTop(this->boxPaintRect.bottom());
+	this->linePaintRect.moveTopLeft(QPoint(0,this->boxPaintRect.bottom()));
 	
 	/* ahora los triggers */
 	this->triggerPaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->triggerPaintRect.setHeight(winHeight * GTQ_TRIGGERS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->triggerPaintRect.moveTop(this->linePaintRect.bottom());
+	this->triggerPaintRect.moveTopLeft(QPoint(0,this->linePaintRect.bottom()));
 	
 	/* ahora el timer pointer */
 	this->pointerPaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->pointerPaintRect.setHeight(winHeight * GTQ_TIMEPOINTER_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->pointerPaintRect.moveTop(this->triggerPaintRect.bottom());
+	this->pointerPaintRect.moveTopLeft(QPoint(0,this->triggerPaintRect.bottom()));
 	
 }
 
@@ -179,9 +167,10 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	/* inicializamos las listas */
 	this->boxObjectsList.clear();
 	this->triggerObjectsList.clear();
-	this->printObjList.clear();	
 	this->allObjList.clear();
-	
+	this->timePointerObjList.clear();
+	this->lineObjList.clear();
+	this->pairList.clear();
 	/* configuramos las diferentes regiones */
 	updateRegiones();
 	
@@ -195,11 +184,14 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	this->timeLine->setColor(timeLineColor);
 	this->timeLine->setScale(this->scale);
 	this->allObjList.append(timeLine);
+	this->lineObjList.append(timeLine);
 	
 	/*! TODO: configurar / crear el timePointer */
 	this->timePointer = new GTQTimePointer(0, 10);
 	this->timePointer->setScale(this->scale);
 	this->allObjList.append(timePointer);
+	this->timePointerObjList.append(timePointer);
+	
 }
 
 /* funcion que devuelve el tamaño que deben tener las cajas */
@@ -357,9 +349,6 @@ void GTimeQueue::removeBoxObject(GTQObject *obj)
 	this->boxObjectsList.removeOne(obj);
 	ordinateElements();
 	
-	/* verificamos si tenemos que eliminarlo de la printList */
-	if (this->printObjList.contains(obj))
-		this->printObjList.removeOne(obj);
 	
 	/* lo eliminamos de la lista completa */
 	if (this->allObjList.contains(obj))
@@ -406,9 +395,6 @@ void GTimeQueue::removeTriggerObject(GTQObject *trig)
 	}
 	this->triggerObjectsList.removeOne(trig);
 	
-	/* si se encuentra en la lista de elementos a pintar lo eliminamos */
-	if (this->printObjList.contains(trig))
-		this->printObjList.removeOne(trig);
 	
 	/* lo scamos de la lista completa */
 	if (this->allObjList.contains(trig))
@@ -423,6 +409,7 @@ void GTimeQueue::removeTriggerObject(GTQObject *trig)
 void GTimeQueue::setPointerMs(unsigned long long ms)
 {
 	this->timePointer->setPos(ms);
+	repaintTimePointer();
 }
 
 /* Funcion que va a mover la referencia a un nuevo "tiempo"
@@ -466,7 +453,8 @@ GTimeQueue::~GTimeQueue(void)
 		delete this->backImg;
 	
 	/* borramos todo de las listas */
-	this->printObjList.clear();
+	this->timePointerObjList.clear();
+	this->lineObjList.clear();
 	this->boxObjectsList.clear();
 	this->allObjList.clear();
 }
@@ -477,44 +465,68 @@ GTimeQueue::~GTimeQueue(void)
 void GTimeQueue::paintEvent(QPaintEvent *event)
 {
 	QList<GTQObject *>::iterator i;
+	QList<QPair<QRect &, QList<GTQObject *>*>* >::iterator j;
+	QList<GTQObject *>* list = NULL;
+	QRect rect;
+	
+	/* verificamos que tengamos que imprimir algo */
+	if (this->pairList.isEmpty())
+		return;
 	
 	this->dispPainter.begin(this);
 	
-	/* verificamos si tenemos una imagen de fondo que re-dibjar, y solo
-	 * vamos a redibujar el sector correspondiente */
+	/* ahora vamos a iterar sobre toda la lista de pares y vamos a dibujar
+	 * para cada par su rectangulo y su lista de elementos */
+	for (j = this->pairList.begin(); j != this->pairList.end(); ++j) {
+		/* obtenemos los elementos si existen */
+		list = NULL;
+		
+		if (!(*j)) {
+			this->pairList.removeOne(*j);
+			continue;
+		}
+		rect = (*j)->first;
+		list = (*j)->second;
+		
+		/* primero que todo lo sacamos de la lista y luego lo liberamos
+		 */
+		this->pairList.removeOne(*j);
+		delete (*j);
+		/* verificamos si tenemos una imagen de fondo que re-dibjar, y solo
+		* vamos a redibujar el sector correspondiente */
+		
+		if (this->backImg != NULL) {
+			QRect normalizedRect;
+			
+			/* calculamos el rectangulo que deberiamos usar para extraer
+			* la porcion deseada de la imagen */
+			normalizedRect.setWidth(this->backImg->width() *
+				rect.width() / this->rect().width());
+			normalizedRect.setHeight(this->backImg->height() *
+				rect.height() / this->rect().height());
+			
+			/* redibujamos solo la parte que tenemos que actualizar */
+			this->dispPainter.drawImage(rect, *this->backImg,
+						normalizedRect);
+		} else {
+			/* si no dibujamos con el fondo de pantalla correspondiente */
+			this->dispPainter.fillRect(rect, this->backColor.base());
+		}
+		
+		/* ahora vamos a dibujar la lista de elementos */
+		if (!list)
+			continue;
 	
-	if (this->backImg != NULL) {
-		QRect normalizedRect;
-		
-		/* calculamos el rectangulo que deberiamos usar para extraer
-		 * la porcion deseada de la imagen */
-		normalizedRect.setWidth(this->backImg->width() *
-			event->rect().width() / this->rect().width());
-		normalizedRect.setHeight(this->backImg->height() *
-			event->rect().height() / this->rect().height());
-		
-		/* redibujamos solo la parte que tenemos que actualizar */
-		this->dispPainter.drawImage(event->rect(), *this->backImg,
-					     normalizedRect);
-	} else {
-		/* si no dibujamos con el fondo de pantalla correspondiente */
-		this->dispPainter.fillRect(event->rect(), this->backColor.base());
+		for (i = (*list).begin(); i != (*list).end(); ++i)
+			if (*i) {
+				if ((*i)->haveToPaint(rect, this->msRef))
+					/* si es un objeto que lo tenemos que mostrar =>
+					* lo agregamos a la lista de mostrables */
+					(*i)->paint(&this->dispPainter, rect, 
+						     this->msRef);
+			}
 	}
 	
-	/*! NOTE: aca debemos tener en cuenta que tenemos en printObjList los
-	 * 	 elementos que queremos que sean impresos. Estos van a ser
-	 * 	 seteados en las repaintXXX functions
-	 */
-	for (i = this->printObjList.begin(); i != this->printObjList.end(); ++i)
-		/*! if (*i) esto es fucking seguro.. no puede ser NULL */
-		(*i)->paint(&this->dispPainter, event->rect(), this->msRef);
-	
-	/* ahora dibujamos la linea de tiempo y el puntero */
-	this->timeLine->paint(&this->dispPainter, event->rect(), this->msRef);
-	
-	if (this->timePointer->haveToPaint(event->rect(), this->msRef))
-		this->timePointer->paint(&this->dispPainter, event->rect(),
-					  this->msRef);
 	
 	this->dispPainter.end();
 }
@@ -523,5 +535,7 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 void GTimeQueue::resizeEvent(QResizeEvent *event)
 {
 	updateRegiones();
+	repaintAll();
+
 }
 

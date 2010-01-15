@@ -26,12 +26,14 @@
 #include <QPalette>
 #include <QtAlgorithms>
 #include <QKeyEvent>
+#include <QPair>
 /* librerias propias */
 #include "consts.h"
 #include "debug.h"
 #include "gtqobject.h"
 #include "timeline.h"
 #include "timepointer.h"
+
 
 /*! Definimos las diferentes regiones donde vamos a mostrar las cosas en % */
 /* dejamos un espacio en blanco al principio */
@@ -187,6 +189,11 @@ class GTimeQueue : public QWidget
 		void repaintTimePointer(void);
 		void repaintAll(void);
 		
+		/* func auxiliar que va a agregar un par a la lista de pares 
+		 * si y solo si no fue agregada anteriormente
+		 */
+		void addPair(QRect &, QList<GTQObject *>*);
+		
 		/* Funcion que va a establecer las diferentes regiones (QRects)
 		 * donde se van a mostrar las diferentes partes segun el tamaño
 		 * de la pantalla.
@@ -217,9 +224,15 @@ class GTimeQueue : public QWidget
 		QList<GTQObject *> boxObjectsList;
 		/* lista de "triggers" a ser mostrados */
 		QList<GTQObject *> triggerObjectsList;
-		/* Lista de objetos que vamos a imprimir por pantalla. Esto es
-		 * para hacer mas eficiente la impresion. */
-		QList<GTQObject *> printObjList;
+		/* para las lineas de tiempo que van a ser una sola */
+		QList<GTQObject *> lineObjList;
+		/* para los time pointers, que pueden ser mas de uno */
+		QList<GTQObject *> timePointerObjList;
+		/* lista donde vamos a ir encolando que queremos hacer update
+		 * que que NO queremos hacer update, vamos a refrezcar el
+		 * rectangulo y redibujar la lista de objetos asociada para
+		 * cada uno de los pares de la lista pairList */
+		QList<QPair<QRect &, QList<GTQObject *>*>* > pairList;
 		/* lista de todos los elementos */
 		QList<GTQObject *> allObjList;
 		/* Posicion de referencia de donde comienza a mostrarse la linea
