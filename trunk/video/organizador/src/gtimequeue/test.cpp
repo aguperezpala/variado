@@ -32,12 +32,11 @@ int main (int argc, char **argv)
 	box2->setDurationMs(5*60*60*1000); /* 5 hs*/
 	
 	
-	gtq->insertBoxObject(box);
-	gtq->insertBoxObject(box2);
-	
 	printf("vamos a empezar...\n");
 	gtq->show();
-	gtq->repaint();
+	gtq->setPointerMs(box->getDurationMs());
+	gtq->insertBoxObject(box);
+	gtq->insertBoxObject(box2);
 	
 	printf("vamos a ejecutar app...\n");
 	

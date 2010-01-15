@@ -35,6 +35,7 @@ void GTQTimeLine::paint(QPainter *painter, const QRect &dest,
 	painter->setPen(this->color);
 	painter->drawLine(dest.left(), dest.bottom(),
 			   dest.right(), dest.bottom());
+	painter->drawText(dest, Qt::AlignCenter, QString("linea de tiempo"));
 }
 
 /*! Siempre vamos a devolver true, siempre queremos mostrar
