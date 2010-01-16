@@ -34,6 +34,7 @@
 #include "timeline.h"
 #include "timepointer.h"
 #include "trigger.h"
+#include "normalbox.h"
 
 
 /*! Definimos las diferentes regiones donde vamos a mostrar las cosas en % */
@@ -109,7 +110,7 @@ class GTimeQueue : public QWidget
 		 * 	la superposicion de estos elementos, y la lista
 		 * 	se mantiene ordenada segun el comienzo de cada elemento.
 		 */
-		void insertBoxObject(GTQObject *obj);
+		void insertBoxObject(GTQNormalBox *obj);
 		
 		/* Funcion que va a mover un objeto determinado de la cola
 		 * a un tiempo especifico.
@@ -120,7 +121,7 @@ class GTimeQueue : public QWidget
 		 * 	asegura que se mantenga ordenada la lista de objetos
 		 * 	y no haya sobreposicion de los mismos
 		 */
-		void moveBoxObject(GTQObject *obj, unsigned long long newStartMs);
+		void moveBoxObject(GTQNormalBox *obj, unsigned long long newStartMs);
 		
 		/* Funcion que elimina un obj de la lista.
 		* REQUIRES:
@@ -130,21 +131,21 @@ class GTimeQueue : public QWidget
 		* 	asegura que el ordenamiento de los elementos se mantenga
 		* 	sin dejar un "hueco" de tiempo libre.
 		*/
-		void removeBoxObject(GTQObject *obj);
+		void removeBoxObject(GTQNormalBox *obj);
 		
 		/* Funcion que va a insertar un trigger
 		 * REQUIRES:
 		 * 	trig != NULL
 		 * 	trig !€ this->triggerObjectsList
 		 */
-		void insertTriggerObject(GTQObject *trig);
+		void insertTriggerObject(GTQTrigger *trig);
 		
 		/* Funcion que elimina un trigger de la lista.
 		* REQUIRES:
 		* 	trig != NULL
 		* 	trig € this->triggerObjectsList
 		*/
-		void removeTriggerObject(GTQObject *trig);
+		void removeTriggerObject(GTQTrigger *trig);
 		
 		/* funcion que va a setear el puntero a un tiempo en ms 
 		 * determinado */

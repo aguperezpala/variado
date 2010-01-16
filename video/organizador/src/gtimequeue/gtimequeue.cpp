@@ -227,7 +227,7 @@ void GTimeQueue::setScale(unsigned long long scale)
 	/* si esta dentro de los rangos... seteamos */
 	this->scale = scale;
 	/* ahora para cada uno de los objetos hacemos lo mismo. */
-	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
+	for (i = this->allObjList.begin(); i != this->allObjList.end(); ++i)
 		if (*i)
 			(*i)->setScale(scale);
 	
@@ -245,7 +245,7 @@ void GTimeQueue::setScale(unsigned long long scale)
 * 	la superposicion de estos elementos, y la lista
 * 	se mantiene ordenada segun el comienzo de cada elemento.
 */
-void GTimeQueue::insertBoxObject(GTQObject *obj)
+void GTimeQueue::insertBoxObject(GTQNormalBox *obj)
 {
 	unsigned long long actualStart = 0;
 	QList<GTQObject *>::iterator i;
@@ -263,13 +263,17 @@ void GTimeQueue::insertBoxObject(GTQObject *obj)
 	 * encontrada la posicion vamos a insertarlo e iterar sobre los
 	 * demas elementos para establecer sus nuevos comienzos 
 	 */
+	printf ("Vamos a isnertar: %s..\n",qstrtochar(obj->getLabel()));
 	actualStart = obj->getStartMs();
 	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i) {
 			/* verificamos quien va primero */
-			if ((*i)->getStartMs() <= actualStart)
+			if ((*i)->getStartMs() < actualStart){
+				printf("insertando en pos: %d\tgetStartMs: %ull\t"
+				"actualStart: %ull\n", pos, (*i)->getStartMs(),
+					actualStart);
 				pos++;
-			else {
+			} else {
 				/* salimos, tenemos que insertarlo aca */
 				i = this->boxObjectsList.end(); /* == break; */
 				break;
@@ -308,7 +312,7 @@ void GTimeQueue::insertBoxObject(GTQObject *obj)
 * 	asegura que se mantenga ordenada la lista de objetos
 * 	y no haya sobreposicion de los mismos
 */
-void GTimeQueue::moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
+void GTimeQueue::moveBoxObject(GTQNormalBox *obj, unsigned long long newStartMs)
 {
 	
 	/* pre */
@@ -343,17 +347,17 @@ void GTimeQueue::moveBoxObject(GTQObject *obj, unsigned long long newStartMs)
 * 	asegura que el ordenamiento de los elementos se mantenga
 * 	sin dejar un "hueco" de tiempo libre.
 */
-void GTimeQueue::removeBoxObject(GTQObject *obj)
+void GTimeQueue::removeBoxObject(GTQNormalBox *obj)
 {
 	/* pre */
 	if (obj == NULL || !(this->boxObjectsList.contains(obj))) {
 		ASSERT(false);
 		return;
 	}
+	
 	/* eliminamos el objeto de la lista y re-ordenamos los elementos */
 	this->boxObjectsList.removeOne(obj);
 	ordinateElements();
-	
 	
 	/* lo eliminamos de la lista completa */
 	if (this->allObjList.contains(obj))
@@ -368,7 +372,7 @@ void GTimeQueue::removeBoxObject(GTQObject *obj)
 * 	trig != NULL
 * 	trig !€ this->triggerObjectsList
 */
-void GTimeQueue::insertTriggerObject(GTQObject *trig)
+void GTimeQueue::insertTriggerObject(GTQTrigger *trig)
 {
 	/* pres */
 	if (trig == NULL || this->triggerObjectsList.contains(trig)) {
@@ -391,7 +395,7 @@ void GTimeQueue::insertTriggerObject(GTQObject *trig)
 * 	trig != NULL
 * 	trig € this->triggerObjectsList
 */
-void GTimeQueue::removeTriggerObject(GTQObject *trig)
+void GTimeQueue::removeTriggerObject(GTQTrigger *trig)
 {
 	/* pres */
 	if (trig == NULL || !(this->triggerObjectsList.contains(trig))) {
