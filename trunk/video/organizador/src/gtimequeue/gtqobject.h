@@ -14,6 +14,7 @@
 #include <QPoint>
 #include <QRect>
 #include <QColor>
+#include <QPen>
 
 /* librerias propias */
 #include "consts.h"
@@ -33,6 +34,8 @@ class GTQObject
 		 */
 		virtual void setScale(unsigned long long scale);
 		
+		/* Setea el grosor de la linea (pen) */
+		void setPenWidth(int w){this->penWidth = w;};
 		
 		/* ### ### ### Manipulacion del comienzo del obj ### ### ### */
 		void setStartMs(unsigned long long s) {this->startMs = s;};
@@ -112,6 +115,8 @@ class GTQObject
 		unsigned long long scale;
 		/* Color para setear al pen del painter. */
 		QColor color;
+		/* grosor de la linea */
+		int penWidth;
 
 };
 

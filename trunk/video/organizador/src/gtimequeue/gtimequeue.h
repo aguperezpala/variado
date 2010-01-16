@@ -33,19 +33,22 @@
 #include "gtqobject.h"
 #include "timeline.h"
 #include "timepointer.h"
+#include "trigger.h"
 
 
 /*! Definimos las diferentes regiones donde vamos a mostrar las cosas en % */
 /* dejamos un espacio en blanco al principio */
 #define GTQ_FST_BLANK		12
+/* lugar donde van a ir los medidores */
+#define GTQ_METERS_SIZE		15
 /* ahora definimos el tamaño de las cajas */
-#define GTQ_BOXS_SIZE		35
+#define GTQ_BOXS_SIZE		45
 /* definimos donde va a ir la linea de tiempo y que tamaño va a tener */
-#define GTQ_TIMELINE_SIZE	10
+#define GTQ_TIMELINE_SIZE	5
 /* el espacio donde van a ir los triggers */
-#define GTQ_TRIGGERS_SIZE	33
+#define GTQ_TRIGGERS_SIZE	23
 /* donde va a ir el puntero de tiempo */
-#define GTQ_TIMEPOINTER_SIZE	10
+#define GTQ_TIMEPOINTER_SIZE	5
 
 
 
@@ -65,7 +68,6 @@ class GTimeQueue : public QWidget
 		 */
 		unsigned long long getTimeUsedMs(void){return this->timeUsed;};
 		
-		
 		/* ### ### ### Manipulacion de la escala ### ### ### */
 		unsigned long long getScale(void) {return this->scale;};
 		
@@ -76,7 +78,6 @@ class GTimeQueue : public QWidget
 		
 		/* Setea el color de fond */
 		void setBackColor(QPalette & color){this->backColor = color;};
-		
 		
 		/* Funcion que va a setear la imagen de fondo, si ya existe
 		* alguna, sera eliminada (liberada la memoria) y se seteara
@@ -89,11 +90,13 @@ class GTimeQueue : public QWidget
 		*/
 		void setBackImg(QImage * img);
 		
+		/* funcion que devuelve la linea de tiempo para que se pueda
+		 * configurar mejor :D */
+		GTQTimeLine * getTimeLine(void){return this->timeLine;};
 		
-		
-		/* funcion que setea el color de la linea de tiempo */
-		void setTimeLineColor(QColor c);
-		
+		/* Funcion que devuelve el timePointer para poder configurarlo
+		 * mejor (setearle todo lo que uno quiera) */
+		GTQTimePointer * getTimePointer(void){return this->timePointer;};
 		
 		/* Funcion que agrega un elemento a la lista de objetos a ser
 		 * impresos por pantalla.
@@ -252,6 +255,7 @@ class GTimeQueue : public QWidget
 		QRect linePaintRect;
 		QRect triggerPaintRect;
 		QRect pointerPaintRect;
+		QRect metersPaintRect;
 		
 };
 
