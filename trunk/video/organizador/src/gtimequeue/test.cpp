@@ -26,13 +26,13 @@ int main (int argc, char **argv)
 	
 	
 	box = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
-	box->setStartMs(refPos.x());
+	box->setStartMs(0);
 	box->setDurationMs(5*60*60*1000); /* 5 hs*/
 	
 	label = "Caja 2";
 	box2 = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
 	box2->setStartMs(box->getDurationMs()+refPos2.x()+5);
-	box2->setDurationMs(5*60*60*1000); /* 5 hs*/
+	box2->setDurationMs(8*60*60*1000); /* 5 hs*/
 	
 	/* creamos los triggers */
 	trig1 = new GTQTrigger(GTQT_JUMP);
@@ -42,10 +42,12 @@ int main (int argc, char **argv)
 	
 	trig2 = new GTQTrigger(GTQT_STOP);
 	trig2->setStart(box->getDurationMs());
-	trig2->setEnd(box->getDurationMs()*2);
+	trig2->setEnd(box->getDurationMs()+9999999);
 	
 	gtq->insertTriggerObject(trig1);
 	gtq->insertTriggerObject(trig2);
+	
+// 	gtq->setScale(144000/2);
 	
 	
 	printf("vamos a empezar...\n");
@@ -53,9 +55,8 @@ int main (int argc, char **argv)
 	gtq->setPointerMs(box->getDurationMs());
 	gtq->insertBoxObject(box);
 	gtq->insertBoxObject(box2);
-	printf("vamos a volver a insertar la box\n");
-	for (i = 0; i < 564; i++ )
-		gtq->insertBoxObject(box);
+	
+	//gtq->moveBoxObject(box2, 0);
 	
 	printf("vamos a ejecutar app...\n");
 	

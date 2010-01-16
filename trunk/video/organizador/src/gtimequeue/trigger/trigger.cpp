@@ -59,9 +59,7 @@ void GTQTrigger::paint(QPainter *painter, const QRect &dest, unsigned long long 
 	auxRect.setHeight(lineHeight);
 	auxRect.moveTopLeft(QPoint(startPixel, lineHeight + 2));
 	/* escribimos */
-	printf("el texto es: %s\n", qstrtochar(label));
 	painter->drawText(auxRect, Qt::AlignHCenter | Qt::AlignTop, label);
-	//painter->drawText(QPoint(startPixel, lineHeight + 2),label);
 	
 	
 }
