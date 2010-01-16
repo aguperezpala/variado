@@ -29,14 +29,9 @@ void GTQTimePointer::paint(QPainter *painter, const QRect &dest, unsigned long l
 {
 	int pixelPos = 0;
 	QRect aux(dest);
-	QPen pen(painter->pen());
 	
-	
-	/* configuramos el pen */
-	pen.setWidth(this->penWidth);
-	pen.setColor(this->color);
-	pen.setStyle(Qt::SolidLine);
-	painter->setPen(pen);
+	/* seteamos el color */
+	painter->setPen(this->color);
 	
 	/* obtenemos en que posicion debemos dibujar el puntero */
 	pixelPos = (int) ((this->pos - msRef) / this->scale);

@@ -1,5 +1,5 @@
-#ifndef GTQTIMEPOINTER_H
-#define GTQTIMEPOINTER_H
+#ifndef GTQTIMEMETER_H
+#define GTQTIMEMETER_H
 
 /* librerias generales */
 #include <QImage>
@@ -14,15 +14,11 @@
 #include "debug.h"
 
 
-class GTQTimePointer: public GTQObject
+class GTQTimeMeter: public GTQObject
 {
 	public:
-		/* Constructor:
-		 * REQUIRES:
-		 * 	posicion inicial
-		 * 	width del puntero
-		 */
-		GTQTimePointer(unsigned long long p, int width);
+		/* Constructor: */
+		GTQTimeMeter(unsigned long long p, int width);
 		
 		/* Esta funcion va a modificar el tamaño del objeto segun la
 		* escala que se pase por parametro.
@@ -47,7 +43,7 @@ class GTQTimePointer: public GTQObject
 		void setWidth(int w){this->width = w;};
 		
 		/* Destructor */
-		~GTQTimePointer();
+		~GTQTimeMeter();
 	
 	
 		

@@ -13,6 +13,14 @@
 #include "debug.h"
 
 
+/* vamos a definir en porcentajes con respecto al rectangulo donde vamos a
+ * dibujar la linea de tiempo, cuanto va a valer la linea corta y la larga
+ * (las longMark y SmallMark)
+ */
+#define GTQTL_LONGMARK_SIZE		40
+#define GTQTL_SMALLMARK_SIZE		15
+
+
 class GTQTimeLine : public GTQObject
 {
 	public:
@@ -43,6 +51,21 @@ class GTQTimeLine : public GTQObject
 		*/
 		bool haveToPaint(const QRect &rect,  unsigned long long initMs);
 		
+		
+		/* ### 		funciones propias	### */
+		
+		/* Funcion que setea el delta en ms para generar una marca
+		 * chiquita 
+		 */
+		void setDeltaSmallMark(unsigned long long ms)
+		{this->deltaSmallMark = ms;};
+		
+		/* Funcion que setea el delta en ms para generar una marca
+		* grande. 
+		*/
+		void setDeltaLongMark(unsigned long long ms)
+		{this->deltaLongMark = ms;};
+		
 		/* Destructor */
 		~GTQTimeLine();
 	
@@ -51,6 +74,10 @@ class GTQTimeLine : public GTQObject
 	private:
 		/* Atributos */
 		
+		/* para determinar cada cuantos ms hacemos una rayita (chica) */
+		unsigned long long deltaSmallMark;
+		/* determinamos cada cuantos ms vamos a hacer una raya larga */
+		unsigned long long deltaLongMark;
 };
 
 #endif

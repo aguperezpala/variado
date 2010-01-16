@@ -78,11 +78,19 @@ void GTimeQueue::updateRegiones(void)
 	/* ahora calculamos para cada uno el tamaño relativo segun el tamaño
 	 * de la pantalla. veamos que el ancho es toda la pantalla. */
 	
+	
+	/* ahora calculamos la seccion de los medidores de tiempo */
+	this->metersPaintRect.setWidth(winWidth);
+	/* calculamos la altura del rectangulo */
+	this->metersPaintRect.setHeight(winHeight * GTQ_METERS_SIZE / 100);
+	/* lo posicionamos donde corresponde */
+	this->metersPaintRect.moveTopLeft(QPoint(0,winHeight * GTQ_FST_BLANK / 100));
+	
 	this->boxPaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->boxPaintRect.setHeight(winHeight * GTQ_BOXS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->boxPaintRect.moveTopLeft(QPoint(0,winHeight * GTQ_FST_BLANK / 100));
+	this->boxPaintRect.moveTopLeft(QPoint(0,this->metersPaintRect.bottom()));
 	
 	/* ahora vamos al time line */
 	this->linePaintRect.setWidth(winWidth);
@@ -183,11 +191,15 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	this->timeLine->setStartMs(this->msRef);
 	this->timeLine->setColor(timeLineColor);
 	this->timeLine->setScale(this->scale);
+	/* vamos hacer que dibujemos una marquita cada 10 pixeles */
+	this->timeLine->setDeltaSmallMark(this->scale * 10);
+	/* una marca mas grande cada 50 pixeles */
+	this->timeLine->setDeltaLongMark(this->scale * 50);
 	this->allObjList.append(timeLine);
 	this->lineObjList.append(timeLine);
 	
 	/*! TODO: configurar / crear el timePointer */
-	this->timePointer = new GTQTimePointer(0, 10);
+	this->timePointer = new GTQTimePointer(this->scale * 50, 10);
 	this->timePointer->setScale(this->scale);
 	this->allObjList.append(timePointer);
 	this->timePointerObjList.append(timePointer);
@@ -221,13 +233,6 @@ void GTimeQueue::setScale(unsigned long long scale)
 	
 	
 }
-
-/* funcion que setea el color de la linea de tiempo */
-void GTimeQueue::setTimeLineColor(QColor c)
-{
-	this->timeLine->setColor(c);
-}
-
 
 /* Funcion que agrega un elemento a la lista de objetos a ser
 * impresos por pantalla.
@@ -447,7 +452,7 @@ void GTimeQueue::setBackImg(QImage * img)
 /* Destructor */
 GTimeQueue::~GTimeQueue(void)
 {
-	
+	int i = 0;
 	/* ahora vamos a liberar la imagen de fondo si es que la hay */
 	if (this->backImg != NULL)
 		delete this->backImg;
@@ -457,6 +462,15 @@ GTimeQueue::~GTimeQueue(void)
 	this->lineObjList.clear();
 	this->boxObjectsList.clear();
 	this->allObjList.clear();
+	/* vemos si tenemos pares en la lista */
+	for (i = 0; i < this->pairList.size(); i++)
+		delete this->pairList.at(i);
+	
+	this->pairList.clear();
+	
+	/* eliminamos la linea de tiempo y el time pointer */
+	delete this->timeLine;
+	delete this->timePointer;
 }
 
 
