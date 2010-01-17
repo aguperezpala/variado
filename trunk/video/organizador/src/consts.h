@@ -21,4 +21,5 @@
  * que van a ser 24 hs = 24*60*60*1000 */
 #define GTQ_MAX_MS_SUPPORTED	86400000
 
+
 #endif

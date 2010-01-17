@@ -4,6 +4,7 @@
 #include "normalbox.h"
 #include "timepointer.h"
 #include "trigger.h"
+#include "timemeters.h"
 #include "tester.h"
 
 
@@ -15,10 +16,11 @@ int main (int argc, char **argv)
 	GTimeQueue *gtq = new GTimeQueue();
 	GTQNormalBox * box = NULL, *box2 = NULL;
 	GTQTrigger * trig1 = NULL, *trig2 = NULL;
+	GTQTimeMeter *tm1 = NULL, *tm2 = NULL;
 	QColor fColor(255,0,0);
 	QColor bColor(0,0,0);
 	QString label = "Caja 1";
-	
+	QColor metersColor(150,150,150);
 	QPoint refPos(200,200);
 	QPoint refPos2(9999000,200);
 	QPoint refPos3(200,200);
@@ -33,6 +35,20 @@ int main (int argc, char **argv)
 	box2 = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
 	box2->setStartMs(box->getDurationMs()+refPos2.x()+5);
 	box2->setDurationMs(8*60*60*1000); /* 5 hs*/
+	
+	/* creamos los medidores */
+	tm1 = new GTQTimeMeter();
+	tm1->setColor(metersColor);
+	tm1->setStart(0);
+	tm1->setEnd(box->getDurationMs());
+	
+	tm2 = new GTQTimeMeter();
+	tm2->setColor(fColor);
+	tm2->setStart(box->getDurationMs());
+	tm2->setEnd(box->getDurationMs() + box2->getDurationMs());
+	
+	gtq->insertMeterObject(tm1);
+	gtq->insertMeterObject(tm2);
 	
 	/* creamos los triggers */
 	trig1 = new GTQTrigger(GTQT_JUMP);
@@ -64,6 +80,7 @@ int main (int argc, char **argv)
 	
 	printf("vamos a terminar...\n");
 	delete gtq;
+	delete tm1; delete tm2;
 	delete box;	delete box2;
 	delete trig1; 	delete trig2;
 	

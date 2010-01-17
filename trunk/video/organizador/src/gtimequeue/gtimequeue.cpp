@@ -52,6 +52,11 @@ void GTimeQueue::repaintTimePointer(void)
 	addPair(this->pointerPaintRect, &this->timePointerObjList);
 	update(this->pointerPaintRect);
 }
+void GTimeQueue::repaintMeters(void)
+{	
+	addPair(this->metersPaintRect, &this->timeMeterObjList);
+	update(this->metersPaintRect);
+}
 void GTimeQueue::repaintAll(void)
 {
 	/* lo hacemos facil */
@@ -59,6 +64,7 @@ void GTimeQueue::repaintAll(void)
 	repaintTriggers();
 	repaintTimeLine();
 	repaintBox();
+	repaintMeters();
 	repaintTimePointer();
 	
 	
@@ -84,13 +90,14 @@ void GTimeQueue::updateRegiones(void)
 	/* calculamos la altura del rectangulo */
 	this->metersPaintRect.setHeight(winHeight * GTQ_METERS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->metersPaintRect.moveTopLeft(QPoint(0,winHeight * GTQ_FST_BLANK / 100));
+	this->metersPaintRect.moveTopLeft(QPoint(0,winHeight * 
+					GTQ_FST_BLANK / 100 - 4));
 	
 	this->boxPaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->boxPaintRect.setHeight(winHeight * GTQ_BOXS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->boxPaintRect.moveTopLeft(QPoint(0,this->metersPaintRect.bottom()));
+	this->boxPaintRect.moveTopLeft(QPoint(0,this->metersPaintRect.bottom()+4));
 	
 	/* ahora vamos al time line */
 	this->linePaintRect.setWidth(winWidth);
@@ -179,6 +186,7 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	this->timePointerObjList.clear();
 	this->lineObjList.clear();
 	this->pairList.clear();
+	this->timeMeterObjList.clear();
 	/* configuramos las diferentes regiones */
 	updateRegiones();
 	
@@ -263,15 +271,11 @@ void GTimeQueue::insertBoxObject(GTQNormalBox *obj)
 	 * encontrada la posicion vamos a insertarlo e iterar sobre los
 	 * demas elementos para establecer sus nuevos comienzos 
 	 */
-	printf ("Vamos a isnertar: %s..\n",qstrtochar(obj->getLabel()));
 	actualStart = obj->getStartMs();
 	for (i = this->boxObjectsList.begin(); i != this->boxObjectsList.end(); ++i)
 		if (*i) {
 			/* verificamos quien va primero */
 			if ((*i)->getStartMs() < actualStart){
-				printf("insertando en pos: %d\tgetStartMs: %ull\t"
-				"actualStart: %ull\n", pos, (*i)->getStartMs(),
-					actualStart);
 				pos++;
 			} else {
 				/* salimos, tenemos que insertarlo aca */
@@ -413,6 +417,51 @@ void GTimeQueue::removeTriggerObject(GTQTrigger *trig)
 	
 }
 
+/* Funcion que va a insertar un timeMetter
+* REQUIRES:
+* 	tm != NULL
+* 	tm !€ this->timeMeterObjList
+*/
+void GTimeQueue::insertMeterObject(GTQTimeMeter *tm)
+{
+	/* pres */
+	if (tm == NULL || this->timeMeterObjList.contains(tm)) {
+		ASSERT(false);
+		return;
+	}
+	/* agregamos el elemento a la lista, no importa el orden aca */
+	this->timeMeterObjList.append(tm);
+	tm->setScale(this->scale);
+	
+	/* lo agregamos a la lista completa */
+	if (!this->allObjList.contains(tm))
+		this->allObjList.append(tm);
+	
+	repaintMeters();
+}
+
+/* Funcion que elimina un timeMeter de la lista.
+* REQUIRES:
+* 	tm != NULL
+* 	tm € this->timeMeterObjList
+*/
+void GTimeQueue::removeMeterObject(GTQTimeMeter *tm)
+{
+	/* pres */
+	if (tm == NULL || !(this->timeMeterObjList.contains(tm))) {
+		ASSERT(false);
+		return;
+	}
+	this->timeMeterObjList.removeOne(tm);
+	
+	
+	/* lo scamos de la lista completa */
+	if (this->allObjList.contains(tm))
+		this->allObjList.removeOne(tm);
+	
+	repaintMeters();
+}
+
 /* funcion que va a setear el puntero a un tiempo en ms 
 * determinado */
 void GTimeQueue::setPointerMs(unsigned long long ms)
@@ -466,6 +515,7 @@ GTimeQueue::~GTimeQueue(void)
 	this->lineObjList.clear();
 	this->boxObjectsList.clear();
 	this->allObjList.clear();
+	this->timeMeterObjList.clear();
 	/* vemos si tenemos pares en la lista */
 	for (i = 0; i < this->pairList.size(); i++)
 		delete this->pairList.at(i);
