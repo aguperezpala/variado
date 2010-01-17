@@ -1,65 +1,114 @@
-#include "timepointer.h"
+#include "timemeters.h"
 
 /* Constructor:
 * REQUIRES:
 * 	posicion inicial
 * 	w = width
 */
-GTQTimePointer::GTQTimePointer(unsigned long long p, int w)
+GTQTimeMeter::GTQTimeMeter(void)
 {
-	this->pos = p;
-	this->width = w;
 }
 
-/* Esta funcion va a modificar el tamaño del objeto segun la
-* escala que se pase por parametro.
-* NOTE: la escala va a representar cuantos ms son representados
-* 	 por 1 pixel.
-*/
-void GTQTimePointer::setScale(unsigned long long scale)
+
+/* para setear el comienzo del medidor */
+void GTQTimeMeter::setStart(unsigned long long start)
 {
-	this->scale = scale;
+	this->start = start;
+	if (this->end < start)
+		this->end = this->start;
 }
 
-/* Dibujamos el puntero en la posicion correspondiente.
-* NOTE: Por el momento va a ser una simple linea, despues
-* podemos reemplazarlo por una imagen o algo mas lindo
+/* para setear el fin del medidor.
+* REQUIRES:
+* 	end >= start
 */
-void GTQTimePointer::paint(QPainter *painter, const QRect &dest, unsigned long long msRef)
+void GTQTimeMeter::setEnd(unsigned long long end)
 {
-	int pixelPos = 0;
-	QRect aux(dest);
+	if (end < this->start) {
+		ASSERT(false);
+		debugp("Estan metiendo un valor incorrecto\n");
+		return;
+	}
+	this->end = end;
+}
+
+
+/* Vamos a dibujar el medidor como si fuese un rectangulo
+* relleno que comienza/finaliza en |--====--|. En el interior
+* vamos a setear cuanto dura en ms o la medida predeterminada
+* y en los extremos vamos a poner el comienzo y el final
+*/
+void GTQTimeMeter::paint(QPainter *painter, const QRect &dest, unsigned long long msRef)
+{
+	QRect rect;
+	QPen pen(painter->pen());
+	int width = 0;
+	int startX = 0, startY = 0;
 	
-	/* seteamos el color */
-	painter->setPen(this->color);
 	
-	/* obtenemos en que posicion debemos dibujar el puntero */
-	pixelPos = (int) ((this->pos - msRef) / this->scale);
+	/* configuramos el pen */
+	pen.setWidth(this->penWidth);
+	pen.setColor(this->color);
+	pen.setStyle(Qt::DotLine);
+	painter->setPen(pen);
 	
-	/* ahora lo dibujamos */
-	aux.setWidth(this->width);
-	aux.moveLeft(pixelPos - (this->width / 2));
-	aux.moveTop(dest.top());
-	painter->drawArc(aux, 30*16, 120*16);
-	painter->drawText(dest, Qt::AlignCenter, QString("Time pointer"));
+	/* calculamos el tamaño de la zona donde vamos a dibujar */
+	width = (this->end - this->start) / this->scale;
+	
+	/* configuramos y posicionamos el rectangulo */
+	rect.setHeight(dest.height() / 3);
+	rect.setWidth(width * 80 / 100); /* va a ocupar el 80 % el rectangulo */
+	startX = (int) (((long long) this->start - (long long) msRef)/
+			((long long)this->scale));
+	
+	rect.moveCenter(QPoint(startX + width/2 ,dest.top() + dest.height()/2));
+	
+	/* lo pintamos */
+	painter->fillRect(rect, this->color);
+	
+	/* ahora dibujamos las lineas punteadas */
+	startY = rect.center().y();
+	/* la horizontal */
+	painter->drawLine(startX, startY, startX + width, startY);
+	/* las verticales */
+	painter->drawLine(startX, startY, startX, dest.bottom());
+	painter->drawLine(startX + width, startY, startX + width, dest.bottom());
+	
+	/* ahora pintamos los numeros usando un nuevo rectangulo */
+	rect.setWidth(width);
+	rect.setHeight(dest.height());
+	rect.moveCenter(QPoint(startX + width/2, dest.top() + dest.height() / 2));
+	
+	pen.setColor(Qt::black);
+	painter->setPen(pen);
+	/* dibujamos la duracion del segmento */
+	painter->drawText(rect, Qt::AlignHCenter | Qt::AlignBottom,
+			   tt_ms_to_all(this->end - this->start));
+	/* el comienzo */
+	painter->drawText(rect, Qt::AlignLeft | Qt::AlignTop,
+			   tt_ms_to_all(this->start));
+	/* el final */
+	painter->drawText(rect, Qt::AlignRight | Qt::AlignTop,
+			   tt_ms_to_all(this->end));
 	
 }
 
 /* Verificamos si debemos o no pintar el puntero.*/
-bool GTQTimePointer::haveToPaint(const QRect &rect,  unsigned long long initMs)
+bool GTQTimeMeter::haveToPaint(const QRect &rect,  unsigned long long initMs)
 {
-	/* lo tenemos que dibujar si y solo si la posicion del puntero esta 
-	 * dentro de los ms que vamos a mostrar */
-	if ((this->pos >= initMs) && (this->pos <= (initMs + (this->scale * 
-		rect.width()))))
+	unsigned long long endMs = rect.width() * this->scale;
+	
+	/* vemos si o el comienzo o el final del medidor esta adentro del
+	 * rango visible (initMs, endMs) */
+	if (((this->start >= initMs) && (this->start <= endMs)) ||
+		((this->end >= initMs) && (this->end <= endMs)))
 		return true;
 	
-	/* caso contrario.. */
 	return false;
 }
 
 /* Destructor */
-GTQTimePointer::~GTQTimePointer()
+GTQTimeMeter::~GTQTimeMeter()
 {
 	/*! nothing to do for the moment */
 }

@@ -33,6 +33,7 @@
 #include "gtqobject.h"
 #include "timeline.h"
 #include "timepointer.h"
+#include "timemeters.h"
 #include "trigger.h"
 #include "normalbox.h"
 
@@ -147,6 +148,20 @@ class GTimeQueue : public QWidget
 		*/
 		void removeTriggerObject(GTQTrigger *trig);
 		
+		/* Funcion que va a insertar un timeMetter
+		* REQUIRES:
+		* 	tm != NULL
+		* 	tm !€ this->timeMeterObjList
+		*/
+		void insertMeterObject(GTQTimeMeter *tm);
+		
+		/* Funcion que elimina un timeMeter de la lista.
+		* REQUIRES:
+		* 	tm != NULL
+		* 	tm € this->timeMeterObjList
+		*/
+		void removeMeterObject(GTQTimeMeter *tm);
+		
 		/* funcion que va a setear el puntero a un tiempo en ms 
 		 * determinado */
 		 void setPointerMs(unsigned long long ms);
@@ -191,6 +206,7 @@ class GTimeQueue : public QWidget
 		void repaintTriggers(void);
 		void repaintTimeLine(void);
 		void repaintTimePointer(void);
+		void repaintMeters(void);
 		void repaintAll(void);
 		
 		/* func auxiliar que va a agregar un par a la lista de pares 
@@ -232,6 +248,8 @@ class GTimeQueue : public QWidget
 		QList<GTQObject *> lineObjList;
 		/* para los time pointers, que pueden ser mas de uno */
 		QList<GTQObject *> timePointerObjList;
+		/* para los timemeters */
+		QList<GTQObject *> timeMeterObjList;
 		/* lista donde vamos a ir encolando que queremos hacer update
 		 * que que NO queremos hacer update, vamos a refrezcar el
 		 * rectangulo y redibujar la lista de objetos asociada para

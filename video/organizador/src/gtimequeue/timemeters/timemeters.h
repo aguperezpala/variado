@@ -7,40 +7,48 @@
 #include <QString>
 #include <QPoint>
 #include <QRect>
+#include <QTime>
 
 /* librerias propias */
 #include "gtqobject.h"
+#include "timetransform.h"
 #include "consts.h"
 #include "debug.h"
+
+
 
 
 class GTQTimeMeter: public GTQObject
 {
 	public:
 		/* Constructor: */
-		GTQTimeMeter(unsigned long long p, int width);
+		GTQTimeMeter(void);
 		
 		/* Esta funcion va a modificar el tamaño del objeto segun la
 		* escala que se pase por parametro.
 		* NOTE: la escala va a representar cuantos ms son representados
 		* 	 por 1 pixel.
 		*/
-		void setScale(unsigned long long scale);
+		void setScale(unsigned long long scale){this->scale = scale;};
 		
-		/* Dibujamos el puntero en la posicion correspondiente.
-		 * NOTE: Por el momento va a ser una simple linea, despues
-		 * podemos reemplazarlo por una imagen o algo mas lindo
+		/* Vamos a dibujar el medidor como si fuese un rectangulo
+		 * relleno que comienza/finaliza en |--====--|. En el interior
+		 * vamos a setear cuanto dura en ms o la medida predeterminada
+		 * y en los extremos vamos a poner el comienzo y el final
 		 */
 		void paint(QPainter *, const QRect &dest, unsigned long long msRef);
 		
 		/* Verificamos si debemos o no pintar el puntero.*/
 		bool haveToPaint(const QRect &rect,  unsigned long long initMs);
 		
-		/* funcion que setea la posicion del puntero */
-		void setPos(unsigned long long ms){this->pos = ms;};
+		/* para setear el comienzo del medidor */
+		void setStart(unsigned long long start);
 		
-		/* Funcion que setea el grosor del puntero, en pixeles */
-		void setWidth(int w){this->width = w;};
+		/* para setear el fin del medidor.
+		 * REQUIRES:
+		 * 	end >= start
+		 */
+		void setEnd(unsigned long long end);
 		
 		/* Destructor */
 		~GTQTimeMeter();
@@ -50,11 +58,10 @@ class GTQTimeMeter: public GTQObject
 	private:
 		/* Atributos */
 		
-		/* este determina en que posicion esta el puntero */
-		unsigned long long pos;
-		/* definimos el tamaño que debe tener el puntero */
-		int width; /* recordemos que el heigth esta dado por el rect */
-
+		/* donde comienza el "medidor" */
+		unsigned long long start;
+		/* donde termina */
+		unsigned long long end;
 };
 
 #endif
