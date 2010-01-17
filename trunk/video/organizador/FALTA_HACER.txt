@@ -1,15 +1,9 @@
-HACIENDO:
-	* Problemas al insertar mas de una caja, se dibuja solo 1.... 
-
-
-
-
-
-
-
-
-REVISAR:
-
-GTimeQueue::GTimeQueue (void):
-	this->display.setColor(...);
-
+* Fijarse todas las funciones que quedaron en blanco del gtimequeue y seguir
+  completando las cosas. (todos los repatinBox, repaintTriggers, etc faltaban)
+* Haciendo los medidores de tiempo
+* TimePointer que indique el tiempo actual y hacerlo mas lindo.
+* Testear las cajas con imagenes y el fondo de la linea de tiempo de otro color
+  e imagenes de fondo.
+* Testear la movilidad del punto de referencia.
+* Testear el zoom
+* Hacer que se autoajuste el zoom a medida que se van incorporando cajas
