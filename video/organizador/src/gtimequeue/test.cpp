@@ -44,12 +44,12 @@ int main (int argc, char **argv)
 	/* configuramos el gtq */
 	/*gtq->setBackColor(gtqBackColor);*/
 	
-// 	testBackImg(gtq);
+	//testBackImg(gtq);
 	
 	box = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
 	box->setStartMs(0);
 	box->setDurationMs(5*60*60*1000); /* 5 hs*/
-// 	setBackBoxImg(box, "/home/agustin/cara_naipe.jpg");
+	setBackBoxImg(box, "/home/agustin/cara_naipe.jpg");
 	
 	label = "Caja 2";
 	box2 = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());

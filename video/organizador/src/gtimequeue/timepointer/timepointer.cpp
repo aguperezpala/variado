@@ -9,6 +9,7 @@ GTQTimePointer::GTQTimePointer(unsigned long long p, int w)
 {
 	this->pos = p;
 	this->width = w;
+	this->penWidth = 1;
 }
 
 /* Esta funcion va a modificar el tamaño del objeto segun la

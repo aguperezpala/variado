@@ -27,6 +27,9 @@
 #include <QtAlgorithms>
 #include <QKeyEvent>
 #include <QPair>
+#include <QEvent>
+#include <QHelpEvent>
+#include <QToolTip>
 /* librerias propias */
 #include "consts.h"
 #include "debug.h"
@@ -184,9 +187,10 @@ class GTimeQueue : public QWidget
 	
 	/* los eventos */
 	protected:
-		/*void mousePressEvent(QMouseEvent *event);
+		/*bool event(QEvent *event);*/
+		//void mousePressEvent(QMouseEvent *event);
 		void mouseMoveEvent(QMouseEvent *event);
-		void mouseReleaseEvent(QMouseEvent *event);*/
+		/*void mouseReleaseEvent(QMouseEvent *event);*/
 		void paintEvent(QPaintEvent *event);
 		/*! para debug momentaneamente */
 		void keyPressEvent(QKeyEvent * event);
