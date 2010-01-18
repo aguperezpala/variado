@@ -7,7 +7,24 @@
 #include "timemeters.h"
 #include "tester.h"
 
+QImage * bi = NULL;
 
+/* testeo de imagen de fondo */
+void testBackImg(GTimeQueue * gtq)
+{
+	gtq->setBackImg(bi);
+	/* ahora seteamos una de fondo */
+	bi = new QImage("/home/agustin/cordoba5.jpg");
+	gtq->setBackImg(bi);
+}
+
+/* seteo de imagen a las cajas */
+void setBackBoxImg(GTQNormalBox * b, const char * name)
+{
+	QImage * img = new QImage(name);
+	b->setBackImg(img);
+}
+	
 int main (int argc, char **argv)
 {
 	QApplication app(argc, argv, true);
@@ -18,22 +35,25 @@ int main (int argc, char **argv)
 	GTQTrigger * trig1 = NULL, *trig2 = NULL;
 	GTQTimeMeter *tm1 = NULL, *tm2 = NULL;
 	QColor fColor(255,0,0);
-	QColor bColor(0,0,0);
+	QColor bColor(150,150,150);
+	QPalette gtqBackColor(Qt::black);
 	QString label = "Caja 1";
 	QColor metersColor(150,150,150);
-	QPoint refPos(200,200);
-	QPoint refPos2(9999000,200);
-	QPoint refPos3(200,200);
 	
 	
+	/* configuramos el gtq */
+	/*gtq->setBackColor(gtqBackColor);*/
+	
+// 	testBackImg(gtq);
 	
 	box = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
 	box->setStartMs(0);
 	box->setDurationMs(5*60*60*1000); /* 5 hs*/
+// 	setBackBoxImg(box, "/home/agustin/cara_naipe.jpg");
 	
 	label = "Caja 2";
 	box2 = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
-	box2->setStartMs(box->getDurationMs()+refPos2.x()+5);
+	box2->setStartMs(box->getDurationMs()+5);
 	box2->setDurationMs(8*60*60*1000); /* 5 hs*/
 	
 	/* creamos los medidores */
@@ -43,7 +63,7 @@ int main (int argc, char **argv)
 	tm1->setEnd(box->getDurationMs());
 	
 	tm2 = new GTQTimeMeter();
-	tm2->setColor(fColor);
+	tm2->setColor(metersColor);
 	tm2->setStart(box->getDurationMs());
 	tm2->setEnd(box->getDurationMs() + box2->getDurationMs());
 	
@@ -68,7 +88,7 @@ int main (int argc, char **argv)
 	
 	printf("vamos a empezar...\n");
 	gtq->show();
-	gtq->setPointerMs(box->getDurationMs());
+	gtq->setPointerMs(box->getDurationMs() + 1000*60*17+1000*59);
 	gtq->insertBoxObject(box);
 	gtq->insertBoxObject(box2);
 	

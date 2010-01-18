@@ -83,25 +83,26 @@ void GTQTimeMeter::paint(QPainter *painter, const QRect &dest, unsigned long lon
 	painter->setPen(pen);
 	/* dibujamos la duracion del segmento */
 	painter->drawText(rect, Qt::AlignHCenter | Qt::AlignBottom,
-			   tt_ms_to_all(this->end - this->start));
+			   tt_ms_to_hms(this->end - this->start));
 	/* el comienzo */
 	painter->drawText(rect, Qt::AlignLeft | Qt::AlignTop,
-			   tt_ms_to_all(this->start));
+			   tt_ms_to_hms(this->start));
 	/* el final */
 	painter->drawText(rect, Qt::AlignRight | Qt::AlignTop,
-			   tt_ms_to_all(this->end));
+			   tt_ms_to_hms(this->end));
 	
 }
 
 /* Verificamos si debemos o no pintar el puntero.*/
 bool GTQTimeMeter::haveToPaint(const QRect &rect,  unsigned long long initMs)
 {
-	unsigned long long endMs = rect.width() * this->scale;
+	unsigned long long endMs = initMs + rect.width() * this->scale;
 	
 	/* vemos si o el comienzo o el final del medidor esta adentro del
 	 * rango visible (initMs, endMs) */
 	if (((this->start >= initMs) && (this->start <= endMs)) ||
-		((this->end >= initMs) && (this->end <= endMs)))
+		((this->end >= initMs) && (this->end <= endMs)) ||
+		((this->start <= initMs) && (this->end >= endMs)))
 		return true;
 	
 	return false;

@@ -9,6 +9,7 @@
 
 /* librerias propias */
 #include "gtqobject.h"
+#include "timetransform.h"
 #include "consts.h"
 #include "debug.h"
 
@@ -63,8 +64,7 @@ class GTQTimeLine : public GTQObject
 		/* Funcion que setea el delta en ms para generar una marca
 		* grande. 
 		*/
-		void setDeltaLongMark(unsigned long long ms)
-		{this->deltaLongMark = ms;};
+		void setDeltaLongMark(int smallM){this->deltaLongMark = smallM;};
 		
 		/* Destructor */
 		~GTQTimeLine();
@@ -76,8 +76,8 @@ class GTQTimeLine : public GTQObject
 		
 		/* para determinar cada cuantos ms hacemos una rayita (chica) */
 		unsigned long long deltaSmallMark;
-		/* determinamos cada cuantos ms vamos a hacer una raya larga */
-		unsigned long long deltaLongMark;
+		/* cada cuantas rayas chicas hacemos una larga */
+		int deltaLongMark;
 };
 
 #endif

@@ -31,25 +31,34 @@ void GTQTimeLine::paint(QPainter *painter, const QRect &dest,
 	QPen pen(painter->pen());
 	int longMarkSize = dest.height() * GTQTL_LONGMARK_SIZE / 100;
 	int smallMarkSize = dest.height() * GTQTL_SMALLMARK_SIZE / 100;
-	int numLongMarks = 0;
+	int prevSmallMarks = 0;
 	int numSmallMarks = 0;
-	int startLMPixel = 0, startSMPixel = 0;
-	int i = 0;
+	int startSMPixel = 0;
+	int i = 0, j = 0, centerY = 0;
 	int top = dest.top() + 2;
-	int smallStepSize = 0, longStepSize = 0;
+	int smallStepSize = 0;
+	QRect textRect(dest);
+	unsigned long long actualMs = 0;
 	
 	/* vamos a calcular cuantas marcas grandes tenemos que hacer y cuantas
 	 * marcas pequeñas tenemos que hacer. */
-	numLongMarks = dest.width() * this->scale / this->deltaLongMark;
 	numSmallMarks = dest.width() * this->scale / this->deltaSmallMark;
 	
+	/* vemos cuantas marcas anteriores segun el punto de referencia se 
+	 * hicieron */
+	prevSmallMarks = msRef / this->deltaSmallMark;
+	
+	/* vemos si tenemos que dibujar o no una larga, las largas solo van a
+	 * ser dibujadas si j == 0 */
+	j = (prevSmallMarks + 1) % this->deltaLongMark;
+	
 	/* calculamos en que pixel debemos comenzar a dibujar */
-	startLMPixel = (int) (msRef % this->deltaLongMark) / this->scale;
-	startSMPixel = (int) (msRef % this->deltaSmallMark) / this->scale;
+	/*! hay varias operaciones hechas y resumidas aca */
+	startSMPixel = (int) (this->deltaSmallMark * (prevSmallMarks + 1) - 
+			msRef) / this->scale;
 	
 	/* calculamos cada cuantos pixeles tenemos que dibujar las marcas */
 	smallStepSize = this->deltaSmallMark / this->scale;
-	longStepSize = this->deltaLongMark / this->scale;
 	
 	/* seteamos las configuraciones */
 	pen.setWidth(this->penWidth);
@@ -61,19 +70,28 @@ void GTQTimeLine::paint(QPainter *painter, const QRect &dest,
 	painter->drawLine(dest.left(), top,
 			   dest.right(), top);
 	
+	centerY = top + dest.height() / 2;
 	/* dibujamos las marcas */
 	longMarkSize += top;
-	
-	for (i = 0; i < numLongMarks; i++) {
-		startLMPixel += longStepSize;
-		painter->drawLine(startLMPixel , top,
-				   startLMPixel, longMarkSize);
-	}
 	smallMarkSize += top;
 	for (i = 0; i < numSmallMarks; i++) {
-		startSMPixel += smallStepSize;
+		if (j == 0) {
+			/* dibujamos larga */
+			painter->drawLine(startSMPixel , top,
+					   startSMPixel, longMarkSize);
+			/*! vamos a setear el tiempo tambien */
+			actualMs = msRef + startSMPixel * this->scale;
+			textRect.moveCenter(QPoint(startSMPixel, centerY));
+			painter->drawText(textRect, Qt::AlignHCenter | 
+					Qt::AlignBottom, tt_ms_to_hms(actualMs));
+			
+		} else {
+			/* dibujamos corta */
 		painter->drawLine(startSMPixel , top,
 				   startSMPixel, smallMarkSize);
+		}
+		j = (j + 1) % this->deltaLongMark;
+		startSMPixel += smallStepSize;
 	}
 	
 	/*painter->drawText(dest, Qt::AlignCenter, QString("Time line"));*/
@@ -86,7 +104,6 @@ void GTQTimeLine::paint(QPainter *painter, const QRect &dest,
 */
 bool GTQTimeLine::haveToPaint(const QRect &rect, unsigned long long initMs)
 {
-	
 	return true;
 }
 

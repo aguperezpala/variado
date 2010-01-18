@@ -40,17 +40,17 @@
 
 /*! Definimos las diferentes regiones donde vamos a mostrar las cosas en % */
 /* dejamos un espacio en blanco al principio */
-#define GTQ_FST_BLANK		12
+#define GTQ_FST_BLANK		1
 /* lugar donde van a ir los medidores */
 #define GTQ_METERS_SIZE		15
 /* ahora definimos el tamaño de las cajas */
 #define GTQ_BOXS_SIZE		45
 /* definimos donde va a ir la linea de tiempo y que tamaño va a tener */
-#define GTQ_TIMELINE_SIZE	5
+#define GTQ_TIMELINE_SIZE	11
 /* el espacio donde van a ir los triggers */
-#define GTQ_TRIGGERS_SIZE	23
+#define GTQ_TRIGGERS_SIZE	20
 /* donde va a ir el puntero de tiempo */
-#define GTQ_TIMEPOINTER_SIZE	5
+#define GTQ_TIMEPOINTER_SIZE	11
 
 
 
@@ -79,7 +79,7 @@ class GTimeQueue : public QWidget
 		void setScale(unsigned long long scale);
 		
 		/* Setea el color de fond */
-		void setBackColor(QPalette & color){this->backColor = color;};
+		void setBackColor(QColor &c){this->backColor = c;};
 		
 		/* Funcion que va a setear la imagen de fondo, si ya existe
 		* alguna, sera eliminada (liberada la memoria) y se seteara
@@ -189,7 +189,7 @@ class GTimeQueue : public QWidget
 		void mouseReleaseEvent(QMouseEvent *event);*/
 		void paintEvent(QPaintEvent *event);
 		/*! para debug momentaneamente */
-		/*void keyPressEvent( QKeyEvent * event );*/
+		void keyPressEvent(QKeyEvent * event);
 		void resizeEvent(QResizeEvent *event);
 
 		
@@ -237,9 +237,6 @@ class GTimeQueue : public QWidget
 		QPainter dispPainter;
 		/* Imagen de fondo, puede ser Null o no. */
 		QImage * backImg;
-		/* en caso de que no haya imagen de fondo vamos a pintar con el
-		 * color predeterminado. */
-		QPalette backColor;
 		/* Lista de objetos (cajas) a ser mostrados */
 		QList<GTQObject *> boxObjectsList;
 		/* lista de "triggers" a ser mostrados */
@@ -266,6 +263,8 @@ class GTimeQueue : public QWidget
 		/* Linea de tiempo */
 		GTQTimeLine *timeLine;
 		GTQTimePointer *timePointer;
+		/* color de fondo */
+		QColor backColor;
 		/* cantidad de milisegundos ocupados en la linea de tiempo */
 		unsigned long long timeUsed;
 		/* ahora determinamos las zonas donde vamos a pintar las 

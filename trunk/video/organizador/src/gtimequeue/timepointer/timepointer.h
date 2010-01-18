@@ -10,6 +10,7 @@
 
 /* librerias propias */
 #include "gtqobject.h"
+#include "timetransform.h"
 #include "consts.h"
 #include "debug.h"
 
