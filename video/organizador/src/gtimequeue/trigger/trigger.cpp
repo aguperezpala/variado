@@ -39,6 +39,7 @@ void GTQTrigger::paint(QPainter *painter, const QRect &dest, unsigned long long 
 	painter->drawLine(startPixel, dest.top(), startPixel, lineHeight);
 	painter->drawLine(endPixel, dest.top(), endPixel, lineHeight);
 	pen.setStyle(Qt::SolidLine);
+	pen.setColor(this->color);
 	painter->setPen(pen);
 	painter->drawLine(startPixel, lineHeight, endPixel, lineHeight);
 	
@@ -71,7 +72,8 @@ bool GTQTrigger::haveToPaint(const QRect &rect,  unsigned long long initMs)
 	
 	/* vemos si lo tenemos que dibujar... */
 	if (((this->start >= initMs) && (this->start <= endMs)) || 
-		((this->end >= initMs) && (this->end <= endMs)))
+		((this->end >= initMs) && (this->end <= endMs)) ||
+		((this->start <= initMs) && (this->end >= endMs)))
 		return true;
 	
 	/* caso contrario.. */

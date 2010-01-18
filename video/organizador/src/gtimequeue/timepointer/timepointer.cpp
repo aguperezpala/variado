@@ -31,12 +31,12 @@ void GTQTimePointer::paint(QPainter *painter, const QRect &dest, unsigned long l
 	QRect aux(dest);
 	QPen pen(painter->pen());
 	
-	
 	/* configuramos el pen */
 	pen.setWidth(this->penWidth);
 	pen.setColor(this->color);
 	pen.setStyle(Qt::SolidLine);
 	painter->setPen(pen);
+	
 	
 	/* obtenemos en que posicion debemos dibujar el puntero */
 	pixelPos = (int) ((this->pos - msRef) / this->scale);
@@ -45,9 +45,11 @@ void GTQTimePointer::paint(QPainter *painter, const QRect &dest, unsigned long l
 	aux.setWidth(this->width);
 	aux.moveLeft(pixelPos - (this->width / 2));
 	aux.moveTop(dest.top());
-	painter->drawArc(aux, 30*16, 120*16);
-	painter->drawText(dest, Qt::AlignCenter, QString("Time pointer"));
-	
+	aux.setHeight(dest.height());
+	/*painter->drawArc(aux, 30*16, 120*16);*/
+	painter->drawLine(aux.center(), QPoint(aux.center().x(), dest.top()));
+	painter->drawText(aux, Qt::AlignHCenter|Qt::AlignBottom, 
+			   tt_ms_to_all(this->pos));
 }
 
 /* Verificamos si debemos o no pintar el puntero.*/

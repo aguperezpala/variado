@@ -91,13 +91,13 @@ void GTimeQueue::updateRegiones(void)
 	this->metersPaintRect.setHeight(winHeight * GTQ_METERS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
 	this->metersPaintRect.moveTopLeft(QPoint(0,winHeight * 
-					GTQ_FST_BLANK / 100 - 4));
+					GTQ_FST_BLANK / 100));
 	
 	this->boxPaintRect.setWidth(winWidth);
 	/* calculamos la altura del rectangulo */
 	this->boxPaintRect.setHeight(winHeight * GTQ_BOXS_SIZE / 100);
 	/* lo posicionamos donde corresponde */
-	this->boxPaintRect.moveTopLeft(QPoint(0,this->metersPaintRect.bottom()+4));
+	this->boxPaintRect.moveTopLeft(QPoint(0,this->metersPaintRect.bottom()+1));
 	
 	/* ahora vamos al time line */
 	this->linePaintRect.setWidth(winWidth);
@@ -169,13 +169,13 @@ void GTimeQueue::ordinateElements(void)
 */
 GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 {
-	QColor timeLineColor = QColor::fromRgb(0,0,0);
+	QColor timeLineColor = QColor::fromRgb(255,255,255);
 	
 	/* seteamos los valores por defecto */
-	this->backColor = QPalette(QColor::fromRgb(255,255,255));
-	this->setPalette (this->backColor);
-	this->scale = GTQ_NORMAL_SCALE;
 	
+	this->backColor = QColor::fromRgb(0,0,0);
+	this->scale = GTQ_NORMAL_SCALE;
+	setBackgroundRole(QPalette::Window);
 	/* configuramos el punto de referencia de la linea de tiempo */
 	this->msRef = 0;
 	
@@ -201,14 +201,16 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	this->timeLine->setScale(this->scale);
 	/* vamos hacer que dibujemos una marquita cada 10 pixeles */
 	this->timeLine->setDeltaSmallMark(this->scale * 10);
-	/* una marca mas grande cada 50 pixeles */
-	this->timeLine->setDeltaLongMark(this->scale * 50);
+	/* una marca grande cada 5 chiquitas */
+	this->timeLine->setDeltaLongMark(5);
 	this->allObjList.append(timeLine);
 	this->lineObjList.append(timeLine);
 	
 	/*! TODO: configurar / crear el timePointer */
-	this->timePointer = new GTQTimePointer(this->scale * 50, 10);
+	this->timePointer = new GTQTimePointer(this->scale * 50, 
+						this->rect().width());
 	this->timePointer->setScale(this->scale);
+	this->timePointer->setPenWidth(1);
 	this->allObjList.append(timePointer);
 	this->timePointerObjList.append(timePointer);
 	
@@ -239,6 +241,7 @@ void GTimeQueue::setScale(unsigned long long scale)
 		if (*i)
 			(*i)->setScale(scale);
 	
+	repaintAll(); /* con esto alcanza */
 	
 }
 
@@ -535,7 +538,9 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 	QList<GTQObject *>::iterator i;
 	QList<QPair<QRect &, QList<GTQObject *>*>* >::iterator j;
 	QList<GTQObject *>* list = NULL;
-	QRect rect;
+	QRect auxRect;
+	
+	
 	
 	/* verificamos que tengamos que imprimir algo */
 	if (this->pairList.isEmpty())
@@ -553,32 +558,42 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 			this->pairList.removeOne(*j);
 			continue;
 		}
-		rect = (*j)->first;
+		auxRect = (*j)->first;
 		list = (*j)->second;
 		
 		/* primero que todo lo sacamos de la lista y luego lo liberamos
 		 */
 		this->pairList.removeOne(*j);
 		delete (*j);
+		
+		this->dispPainter.setPen(this->backColor);
+		
 		/* verificamos si tenemos una imagen de fondo que re-dibjar, y solo
 		* vamos a redibujar el sector correspondiente */
-		
 		if (this->backImg != NULL) {
 			QRect normalizedRect;
 			
-			/* calculamos el rectangulo que deberiamos usar para extraer
-			* la porcion deseada de la imagen */
+			/* calculamos el rectangulo que deberiamos usar para 
+			* extraer la porcion deseada de la imagen */
 			normalizedRect.setWidth(this->backImg->width() *
-				rect.width() / this->rect().width());
+				auxRect.width() / this->rect().width());
 			normalizedRect.setHeight(this->backImg->height() *
-				rect.height() / this->rect().height());
+				auxRect.height() / this->rect().height());
 			
+			/* posicionamos el rectangulo donde corresponde */
+			normalizedRect.moveLeft(auxRect.left() * 
+				this->backImg->width() / this->rect().width());
+			normalizedRect.moveTop(auxRect.top() * 
+				this->backImg->height() / this->rect().height());
+				
 			/* redibujamos solo la parte que tenemos que actualizar */
-			this->dispPainter.drawImage(rect, *this->backImg,
+			this->dispPainter.drawImage(auxRect, *this->backImg,
 						normalizedRect);
 		} else {
-			/* si no dibujamos con el fondo de pantalla correspondiente */
-			this->dispPainter.fillRect(rect, this->backColor.base());
+			/* si no dibujamos con el fondo de pantalla 
+			 * correspondiente */
+			this->dispPainter.fillRect(auxRect, this->backColor);
+			
 		}
 		
 		/* ahora vamos a dibujar la lista de elementos */
@@ -587,14 +602,14 @@ void GTimeQueue::paintEvent(QPaintEvent *event)
 	
 		for (i = (*list).begin(); i != (*list).end(); ++i)
 			if (*i) {
-				if ((*i)->haveToPaint(rect, this->msRef))
+				if ((*i)->haveToPaint(auxRect, this->msRef)){
 					/* si es un objeto que lo tenemos que mostrar =>
 					* lo agregamos a la lista de mostrables */
-					(*i)->paint(&this->dispPainter, rect, 
+					(*i)->paint(&this->dispPainter, auxRect, 
 						     this->msRef);
+				}
 			}
 	}
-	
 	
 	this->dispPainter.end();
 }
@@ -607,3 +622,27 @@ void GTimeQueue::resizeEvent(QResizeEvent *event)
 
 }
 
+void GTimeQueue::keyPressEvent(QKeyEvent * event)
+{
+	int key = event->key();
+	
+	switch (key) {
+		case Qt::Key_Left:
+			if (this->msRef >= GTQ_NORMAL_SCALE)
+				setDisplayRef(this->msRef - GTQ_NORMAL_SCALE);
+			break;
+	
+		case Qt::Key_Right:
+			setDisplayRef(this->msRef + GTQ_NORMAL_SCALE);
+			break;
+		
+		case Qt::Key_Up:
+			setScale(this->scale - 400);
+			break;
+		
+		case Qt::Key_Down:
+			setScale(this->scale + 400);
+			
+			break;
+	}
+}
