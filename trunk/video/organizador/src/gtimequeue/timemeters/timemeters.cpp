@@ -7,6 +7,7 @@
 */
 GTQTimeMeter::GTQTimeMeter(void)
 {
+	this->penWidth = 1;
 }
 
 

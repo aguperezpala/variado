@@ -191,6 +191,7 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 	updateRegiones();
 	
 	this->scale = GTQ_NORMAL_SCALE;
+	this->setMouseTracking(true);
 	
 	/*! aca deberiamos setear las configuraciones de la linea de tiempo,
 	 *  el estilo y esas cosas.. */ 
@@ -211,6 +212,7 @@ GTimeQueue::GTimeQueue (void)  : backImg(NULL), timeUsed(0)
 						this->rect().width());
 	this->timePointer->setScale(this->scale);
 	this->timePointer->setPenWidth(1);
+	this->timePointer->setColor(timeLineColor);
 	this->allObjList.append(timePointer);
 	this->timePointerObjList.append(timePointer);
 	
@@ -620,6 +622,12 @@ void GTimeQueue::resizeEvent(QResizeEvent *event)
 	updateRegiones();
 	repaintAll();
 
+}
+
+void GTimeQueue::mouseMoveEvent(QMouseEvent *event)
+{
+	
+	QToolTip::showText(event->globalPos(), QString("AAAAAAAAAAA"),this);
 }
 
 void GTimeQueue::keyPressEvent(QKeyEvent * event)

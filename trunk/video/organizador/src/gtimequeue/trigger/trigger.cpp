@@ -6,6 +6,7 @@
 GTQTrigger::GTQTrigger(gtqt_type_t kind)
 {
 	this->kind = kind;
+	this->penWidth = 1;
 }
 
 /* Dibujamos el trigger segun que tipo de trigger sea.
