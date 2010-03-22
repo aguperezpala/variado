@@ -19,6 +19,9 @@
  */
 QString tt_ms_to_all(unsigned long long ms);
 
+/* Funcion que va a devolver horas:minutos:segundos desde una cantidad de ms */
+QString tt_ms_to_hms(unsigned long long ms);
+
 /* Funcion que devuelve la cantidad de horas segun la cantidad de ms */
 int tt_ms_get_hs(unsigned long long ms);
 

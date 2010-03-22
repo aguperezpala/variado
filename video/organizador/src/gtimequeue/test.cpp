@@ -52,7 +52,7 @@ int main (int argc, char **argv)
 	setBackBoxImg(box, "/home/agustin/cara_naipe.jpg");
 	
 	label = "Caja 2";
-	box2 = new GTQNormalBox(bColor,fColor, label, false, gtq->getBoxHeigth());
+	box2 = new GTQNormalBox(bColor,fColor, label, true, gtq->getBoxHeigth());
 	box2->setStartMs(box->getDurationMs()+5);
 	box2->setDurationMs(8*60*60*1000); /* 5 hs*/
 	
