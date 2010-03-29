@@ -105,6 +105,10 @@ class BTDongleDevice {
 		 * 	<  0	on error
 		 */
 		int closePhysicalConnection(bdaddr_t * baDst, uint8_t reason);
+		int closePhysicalConnection(struct hci_conn_info *dst, 
+					     uint8_t reason);
+		int closePhysicalConnection(uint16_t handle, uint8_t reason);
+		
 		
 		/* Funcion que hace un escaneo de dispositivos devolviendo
 		 * una lista de bdaddr_t * (de macs) las cuales tienen
@@ -203,6 +207,15 @@ class BTDongleDevice {
 		 * 	NULL			on error
 		 */
 		string * devInfoToStr(struct hci_dev_info * devInfo);
+		
+		/* funcion que cierra una conexion segun su identificador. y
+		 * con un codigo de razon de cierre de conexion.
+		 * RETURNS:
+		 * 	< 0 	on error
+		 * 	0	on success (ver hci_disconnect -hci_lib.h-) 
+		 */
+		 int disconnectPhyCon(uint16_t cHanndle, uint8_t reason);
+		
 		
 		/* Argumentos */
 		
