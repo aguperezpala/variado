@@ -1,16 +1,16 @@
+#g++ -I../ -I./../btsdpsessiondata -lbluetooth -g -Wall -Wextra -c *.cpp ../btsdpsessiondata/*.cpp 
+
 CC = g++
-CFLAGS = -g -Wall -Wextra -D_DDEBUG
-LIBS = -lbluetooth
+CFLAGS = -g -Wall -Wextra -D_DDEBUG -I../ -I./../btsdpsessiondata
+LIBS = -lbluetooth 
 TARGET = test
-INCLUDES = -I.. 
 SOURCES = $(shell echo *.cpp) 
-OBJECTS = $(SOURCES:%.c=%.o)
+OBJECTS = $(SOURCES:%.cpp=%.o) ../btsdpsessiondata/btsdpsessiondata.o
 
 all: $(TARGET) 
 
-
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(INCLUDES)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 
 -include .depend

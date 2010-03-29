@@ -1,9 +1,8 @@
 CC = g++
-CC = g++
-CFLAGS = -g -Wall -Wextra -D__DEBUG
+CFLAGS = -g -Wall -Wextra -D_DDEBUG
 LIBS = -lbluetooth
 TARGET = test
-INCLUDES = -I./../ -I../btdongledevice
+INCLUDES = -I../ 
 SOURCES = $(shell echo *.cpp) 
 OBJECTS = $(SOURCES:%.cpp=%.o)
 
@@ -11,7 +10,7 @@ all: $(TARGET)
 
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $^ $(LIBS) 
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(INCLUDES)
 
 
 -include .depend
