@@ -1,0 +1,3 @@
+STL library (c++)
+Bluetooth (bluez)
+g++

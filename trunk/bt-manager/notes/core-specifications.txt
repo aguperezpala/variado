@@ -1,0 +1,45 @@
+Como hacer para eliminar las conexiones (physical links)
+--------------------------------------------------------
+
+
+During the time that a slave device is actively connected to a piconet there is
+always a default ACL logical transport between the slave and the master
+device. There are two methods of deleting the default ACL logical transport.
+The first method is to detach the device from the piconet physical channel, at
+which time the entire hierarchy of L2CAP channels, logical links and logical
+transports between the devices is deleted.
+
+The second method is to place the physical link to the slave device in the park
+state, at which time it gives up its default ACL logical transport. This is only
+allowed if all other logical transports have been deleted (except for the ASB
+logical transport that cannot be explicitly created or deleted.) It is not allowed to
+park a device while it has any logical transports other than the default ACL and
+ASB logical transports.
+
+When the slave device physical link is parked, its default ACL logical transport
+is released and the ASB logical transport is replaced with a PSB logical trans-
+port. The ACL-C and ACL-U logical links that are multiplexed onto the default
+ACL logical transport remain in existence but cannot be used for the transport
+of data. The Link Manager on the master device restricts itself to the use of
+LMP messages that are allowed to be transported over the PSB-C logical link.
+The Channel Manager and L2CAP Resource Manager ensure that no L2CAP
+unicast data traffic is submitted to the controller while the device is parked. The
+Channel Manager may decide to manage the parking and unparking of the
+device as necessary to allow data to be transported.
+
+
+
+4.1.2 Detach
+The connection between two Bluetooth devices may be detached anytime by
+the master or the slave. An error code parameter is included in the message to
+inform the other party of why the connection is detached.
+
+
+4.5.2.1 Master requests slave to enter park state
+The master can request park state. The master LM shall pause traffic on the
+ACL-U logical link (see Baseband Specification, Section 5.3.1, on page 108)
+and then send an LMP_park_req PDU. If the slave agrees to enter park state it
+shall pause traffic on the ACL-U logical link (see Baseband Specification, Sec-
+tion 5.3.1, on page 108). and then respond with an LMP_accepted PDU.
+
+
