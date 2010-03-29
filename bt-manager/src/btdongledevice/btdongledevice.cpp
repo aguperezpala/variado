@@ -168,6 +168,96 @@ int BTDongleDevice::disconnectPhyCon(uint16_t cHanndle, uint8_t reason)
 }
 
 
+/* Libera una conexion con el SDP server.
+* REQUIRES:
+* 	sdpData != NULL
+*/
+void BTDongleDevice::destroySDPService(BTSDPSessionData *sdpData)
+{
+	if(!sdpData){ 
+		debugp("Estamos recibiendo sdpData NULL\n");
+		return;
+	}
+	sdp_data_free (sdpData->channel ) ;
+	sdp_list_free (sdpData->l2cap_list , 0 ) ;
+	sdp_list_free (sdpData->rfcomm_list , 0 ) ;
+	sdp_list_free (sdpData->root_list , 0 ) ;
+	sdp_list_free (sdpData->proto_list ,0);
+	sdp_list_free (sdpData->access_proto_list , 0 ) ;
+	sdp_list_free (sdpData->svc_class_list , 0 ) ;
+	sdp_list_free (sdpData->profile_list , 0 ) ;
+	sdp_record_free(sdpData->record); sdpData->record = NULL;
+	sdp_close(sdpData->session); sdpData->session = NULL;
+}
+
+/* Funcion que se conecta con el servidor SDP y establece
+* un nuevo servicio devolviendo un codigo de error
+* REQUIRES:
+* 	sdpData 	!= NULL
+* RETURNS:
+* 	< 0		on error
+* 	== 0		if success
+*/
+int BTDongleDevice::createSDPService(BTSDPSessionData *sdpData)
+{
+	
+	if (!sdpData) {
+		debugp("Recibimos un sdpData NULL\n");
+		return -1;
+	}
+	
+	// set the general service ID
+	sdp_set_service_id ( sdpData->record , sdpData->svc_uuid ) ;
+	
+	// set the service class
+	sdp_uuid16_create(&sdpData->svc_class_uuid, SERIAL_PORT_SVCLASS_ID);
+	sdpData->svc_class_list = sdp_list_append(0, &sdpData->svc_class_uuid);
+	sdp_set_service_classes(sdpData->record , sdpData->svc_class_list);
+	
+	// set the Bluetooth profile information
+	sdp_uuid16_create(&sdpData->profile.uuid , SERIAL_PORT_PROFILE_ID ) ;
+	profile.version = 0x0100 ;
+	profile_list = sdp_list_append( 0 , &profile ) ;
+	sdp_set_profile_descs (sdpData->record , sdpData->profile_list ) ;
+	
+	// make the service record publicly browsable
+	sdp_uuid16_create(&sdpData->root_uuid , PUBLIC_BROWSE_GROUP ) ;
+	sdpData->root_list = sdp_list_append ( 0 , &sdpData->root_uuid ) ;
+	sdp_set_browse_groups ( sdpData->record , sdpData->root_list ) ;
+	
+	// set l2cap information
+	sdp_uuid16_create(&sdpData->l2cap_uuid , L2CAP_UUID ) ;
+	sdpData->l2cap_list = sdp_list_append ( 0 , &sdpData->l2cap_uuid ) ;
+	sdpData->proto_list = sdp_list_append ( 0 , sdpData->l2cap_list ) ;
+	
+	// register the RFCOMM channel for RFCOMM sockets
+	sdp_uuid16_create(&sdpData->rfcomm_uuid , RFCOMM_UUID );
+	sdpData->channel = sdp_data_alloc(SDP_UINT8, &sdpData->rfcomm_channel);
+	sdpData->rfcomm_list = sdp_list_append (0, &sdpData->rfcomm_uuid);
+	sdp_list_append (sdpData->rfcomm_list , sdpData->channel);
+	sdp_list_append (sdpData->proto_list , sdpData->rfcomm_list);
+	sdpData->access_proto_list = sdp_list_append(0, sdpData->proto_list);
+	sdp_set_access_protos (sdpData->record , sdpData->access_proto_list);
+	
+	// set the name, provider, and description
+	sdp_set_info_attr(sdpData->record , sdpData->serviceName,
+			   sdpData->serviceProv , sdpData->serviceDsc);
+	
+	/*! nos vamos a conectar al sdp server del dispositivo local... */
+	sdpData->session = sdp_connect(&this->mac, BDADDR_LOCAL , SDP_RETRY_IF_BUSY );
+	if (sdpData->session == NULL){
+		perror("Error al conectarse con el sdp local\n");
+		/* liberamos todo */
+		destroySDPService(sdpData);
+		return -1;
+	}
+	sdp_record_register(sdpData->session, sdpData->record, 0);
+	
+	/* todo lindo devolvemos 0 */
+	return 0;
+}
+
+
 
 /*!			Funciones publicas			*/
 
@@ -410,7 +500,10 @@ int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason)
 		if (bacmp((*it)->bdaddr, baDst) == 0) {
 			/* son iguales ==> cerramos la conexion y salimos */
 			result = disconnectPhyCon((*it)->handle, reason);
-			break;
+			/*! break; Si sacamos este break lo que conseguimos
+			 * es poder desconectar TODAS las conexiones asociadas
+			 * a una mac determinada, que en fin es lo que queremos
+			 */
 		}
 	}
 	/* eliminamos la lista y todos los elementos */
@@ -521,12 +614,21 @@ list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList)
 	}
 	
 	for (it = macList->begin(); it != macList->end(); ++it){
+		if (!(*it))
+			continue;
+		
 		/* inicializamos */
 		fName = NULL;
-		memset(name, '\0', sizeof(name));
+		memset(name, '\0', 248);
+		
+		hci_read_remote_name(this->sock, (*it), 248, name, 0);
+		/* vamos a agregar un string null si hubo error para mantener
+		 * el mapeo */
+		fName = new string(name);
+		result.push_front(fName);
 	}
 	
-	
+	return result;
 }
 
 /*! 			SDP SERVER			*/
@@ -537,7 +639,10 @@ list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList)
 * 	list<const BTSDPSessionData*> *list
 * 	NULL	on error
 */
-const list<const BTSDPSessionData*>& BTDongleDevice::getSDPSessions(void);
+const list<const BTSDPSessionData*>& BTDongleDevice::getSDPSessions(void)
+{
+	return this->sdpList;
+}
 
 /* Funcion que elimina un servicio (SDP) determinado,
 * REQUIRES:
@@ -548,20 +653,67 @@ const list<const BTSDPSessionData*>& BTDongleDevice::getSDPSessions(void);
 * 	false	otherwise (==> !free(btS))
 * NOTE: btS es eliminado luego de esta llamada.
 */
-bool BTDongleDevice::removeSDPSession(BTSDPSessionData *btS);
+bool BTDongleDevice::removeSDPSession(BTSDPSessionData *btS)
+{
+	if (!btS)
+		return false;
+	
+	destroySDPService(btS);
+	this->sdpList.remove(btS);
+	delete btS;
+	
+	return true;
+}
 
 /* Funcion que inserta un nuevo servicio al SDP local, si y solo
 * si este no se encuentra ya corriendo en el server.
 * REQUIRES:
 * 	btS 	!= NULL
 * RETURNS:
-* 	> 0	on succes
+* 	>= 0	on succes
 * 	< 0	on error
 * NOTE: No debe ser eliminado btS luego de haber llamado a esta
 * 	 funcion.
 */
-int BTDongleDevice::addSDPSession(BTSDPSessionData *btS);
-
+int BTDongleDevice::addSDPSession(BTSDPSessionData *btS)
+{
+	list<BTSDPSessionData*>::iterator it;
+	int result = -1;
+	bool found = false;
+	
+	if (!bts) {
+		debugp("recibimos un btS para agregar null\n");
+		return result;
+	}
+	
+	/* primero buscamos que no se encuentre ese servicio segun el uuid */
+	for (it = this->sdpList.begin(); it != this->sdpList.end; ++it) {
+		if (!(*it))
+			continue;
+		/* comparamos */
+		if(sdp_uuid128_cmp((*it)->svc_uuid, btS->svc_uuid) == 0) {
+			/* ya existe entonces no lo agrgamos */
+			found = true;
+			break;
+		}
+	}
+	if (found) {
+		debugp("El servicio ya existe corriendo en el SDP "
+		"Server..\n");
+		return -1;
+	}
+		
+	/* si estamos aca es porque no lo encontramos ==> lo agregamos */
+	if (createSDPService(btS) < 0) {
+		/* :( no se pudo crear... devolvemos error */
+		result = -1;
+	} else {
+		/* si pudo crearse => lo agrgamos a la lista */
+		this->sdpList.push_front(btS);
+	}
+	
+	return result;
+}
 
 /*! Podriamos agregar mas funciones para comunicarnos con el
 * dispositivo pero son muchas (pero para poder ejecutar estas
@@ -574,15 +726,35 @@ int BTDongleDevice::addSDPSession(BTSDPSessionData *btS);
 * RETURNS:
 * 	codeErr (veer hci.h/hci_lib.h)
 */
-int BTDongleDevice::sendCmd(uint16_t ogf, uint16_t ocf, uint8_t plen, void *param);
+int BTDongleDevice::sendCmd(uint16_t ogf, uint16_t ocf, uint8_t plen, void *param)
+{
+	return hci_send_cmd(this->sock, ogf, ocf, plen, param);
+}
 
 /* Funcion que realiza un request al dipositivo.
 * RETURNS:
 * 	codeErr (ver hci.h/hci_lib.h)
 */
-int BTDongleDevice::sendReq(struct hci_request *req, int timeout);
+int BTDongleDevice::sendReq(struct hci_request *req, int timeout)
+{
+	return hci_send_req(this->sock, req, timeout);
+}
 
 /* Destructor.
 * Se desconecta del dispositivo y elimina todo los datos
 */
-BTDongleDevice::~BTDongleDevice(void);
+BTDongleDevice::~BTDongleDevice(void)
+{
+	list<BTSDPSessionData*>::iterator it;
+	
+	/* cerramos la conexion con el microcontrolador */
+	close(sock);
+	/* cerramos cada conexion */
+	for (it = this->sdpList.begin(); it != this->sdpList.end(); ++it) {
+		destroySDPService(*it);
+		delete(*it);
+	}
+	this->sdpList.erease();
+	
+	
+}
