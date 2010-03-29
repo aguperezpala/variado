@@ -156,6 +156,16 @@ string * BTDongleDevice::devInfoToStr(struct hci_dev_info * devInfo)
 
 
 
+/* funcion que cierra una conexion segun su identificador. y
+* con un codigo de razon de cierre de conexion.
+* RETURNS:
+* 	< 0 	on error
+* 	0	on success (ver hci_disconnect -hci_lib.h-) 
+*/
+int BTDongleDevice::disconnectPhyCon(uint16_t cHanndle, uint8_t reason)
+{
+	return hci_disconnect(this->sock, cHanndle, reason, 0);
+}
 
 
 
@@ -275,7 +285,7 @@ string * BTDongleDevice::getDevName(void)
 	char devName[248] = {0};
 	
 	if (hci_read_local_name(this->sock, sizeof(devName), devName,
-		HCI_REQ_TIMEOUT) < 0) {
+		0) < 0) {
 		
 		perror("No se pudo leer el nombre del dispositivo ");
 		return NULL;
@@ -294,7 +304,7 @@ void BTDongleDevice::setDevName(const string *name)
 	}
 	
 	if (hci_write_local_name(this->sock, (char *)name->c_str()), 
-		HCI_REQ_TIMEOUT) < 0) {
+		0) < 0) {
 		perror("No se pudo escribir el nombre del dispositivo ");
 		return;
 	}
@@ -313,7 +323,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 {
 	list<struct hci_conn_info*> *result = NULL;
 	struct hci_conn_list_req *cl;
-	struct hci_conn_info *ci;
+	struct hci_conn_info *ci, *conInfo = NULL;
 	int i;
 	int adapter_id , sock;
 	
@@ -333,22 +343,37 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	}
 	
 	/* verificamos si obtuvimos alguna conexion */
-	if (cl->conn_num <= 0)
+	if (cl->conn_num <= 0) {
 		/* no obtuvimos ninguna */
+		debugp("No hay establecida ninguna conexion\n");
 		return NULL;
+	}
 	
 	/* si estamos aca es porque SI hay conexiones! */
+	result = new list<struct hci_conn_info*>();
+	if (!result){
+		debugp("No hay memoria para crear la lista\n");
+		return NULL;
+	}
+	
 	
 	for (i = 0; i < cl->conn_num; i++, ci++) {
-		char addr[18];
-		ba2str(&ci->bdaddr, addr);
-		printf("\t%s %s %s handle %d state %d lm %s\n",
-			ci->out ? "<" : ">",
-			ci->type == ACL_LINK ? "ACL" : "SCO",
-			addr, ci->handle, ci->state,
-			hci_lmtostr(ci->link_mode));
+		conInfo = (struct hci_conn_info *) malloc(sizeof(*conInfo));
+		if (!conInfo) {
+			debugp("Error al pedir memoria para hci_conn_info\n");
+			continue;
+		}
+		/* copiamos los datos del connection_info */
+		memcpy(conInfo, ci, sizeof(*conInfo));
+		/* agregamos a la lista */
+		result.push_front(conInfo);
+		conInfo = NULL;
 	}
-	return 0;
+	/* liberamos la memoria */
+	free(cl);
+	
+	return result;
+}
 
 /* Funcion que va a forzar el cierre de una conexion con un
 * dispositivo determinado.
@@ -359,8 +384,61 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 * 	>= 0 	on success
 * 	<  0	on error
 */
-int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason);
+int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason)
+{
+	list<struct hci_conn_info*> *conList = NULL;
+	list<struct hci_conn_info*>::iterator it;
+	int result = 0;
+	
+	if (!baDst) {
+		debugp("Nos pasaron una baDst NULL para cerrar\n");
+		return -1;
+	}
+	
+	/* primero obtenemos la lista de conexiones que tiene el dongle y
+	 * vamos a buscar en la lista si tenemos o no una conexion con dir 
+	 * baDst */
+	conList = getPhysicalConnections();
+	if (!conList) {
+		return -1;
+	}
+	
+	for (it = conList->begin(); it != conList->end(); ++it) {
+		if(!(*it))
+			continue;
+		/* verificamos si la bdaddr == baDst */
+		if (bacmp((*it)->bdaddr, baDst) == 0) {
+			/* son iguales ==> cerramos la conexion y salimos */
+			result = disconnectPhyCon((*it)->handle, reason);
+			break;
+		}
+	}
+	/* eliminamos la lista y todos los elementos */
+	for (it = conList->begin(); it != conList->end(); ++it) {
+		if (*it)
+			free(*it);
+	}
+	conList->erase();
+	delete conList();
+	
+	return result;
+}
+	
+	
+}
 
+int BTDongleDevice::closePhysicalConnection(struct hci_conn_info *dst, 
+					     uint8_t reason)
+{
+	if (!dst)
+		return -1;
+	
+	return disconnectPhyCon(dst->handle, reason);
+}
+int BTDongleDevice::closePhysicalConnection(uint16_t handle, uint8_t reason)
+{
+	return disconnectPhyCon(handle, reason);
+}
 
 /* Funcion que hace un escaneo de dispositivos devolviendo
 * una lista de bdaddr_t * (de macs) las cuales tienen
@@ -370,7 +448,49 @@ int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason);
 * 	NULL		on error
 * NOTE: genera memoria para cada bdaddr_t y la lista.
 */
-list<bdaddr_t *> * BTDongleDevice::scanNearbyDevices(void);
+list<bdaddr_t *> * BTDongleDevice::scanNearbyDevices(void)
+{
+	list<bdaddr_t *> *result = NULL;
+	inquiry_info *devices = NULL;
+	int maxRsp = 0, numRsp = 0, len = 0, flags = 0;
+	int i = 0;
+	bdaddr_t *mac = NULL;
+	
+	len = 8 ; /*! tiempo a esperar (1.28 secs * len) */
+	maxRsp = 255; /*! max cant de dispositivos */
+	/*! limpiamos el cache */
+	flags = IREQ_CACHE_FLUSH ; 
+	devices = (inquiry_info *) malloc(max_rsp * sizeof(inquiry_info));
+	numRsp = hci_inquiry((int) this->devID, len, maxRsp, NULL, &devices,
+                 flags);
+	if ( numRsp < 0 ) {
+		perror(" hci inquiry");
+		free(devices);
+		return NULL;
+	}
+	/* generamos la lista */
+	result = new list<bdaddr_t *>();
+	if (!result) {
+		debugp("error al crear la lista\n");
+		free(devices);
+		return NULL;
+	}
+  
+	for (i = 0; i < numRsp; i++) {
+		mac = (bdaddr_t *) malloc(sizeof(*mac));
+		if (!mac) {
+			debugp("Error pidiendo memoria para la mac\n");
+			continue;
+		}
+		bacpy(&(devices+i)->bdaddr, mac);
+		/* ahora agregamos a la lista la mac */
+		result->push_front(mac);
+		mac = NULL;
+	}
+	
+	free(devices);
+	return result;
+}
 
 /* Funcion que devuelve una lista de friendly names en base
 * a una lista de MACs.
@@ -382,7 +502,32 @@ list<bdaddr_t *> * BTDongleDevice::scanNearbyDevices(void);
 *	NULL on error
 * NOTE: se genera memoria para cada friendlyname & list.
 */
-list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList);
+list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList)
+{
+	list<string*> *result = NULL;
+	list<bdaddr_t*>::iterator it;
+	string * fName = NULL;
+	char name[248];
+	
+	if(macList == NULL || macList->size() == 0) {
+		debugp("macList NULL\n");
+		return NULL;
+	}
+	
+	result = new list<string*>();
+	if(!result) {
+		debugp("No se pudo generar la lista\n");
+		return NULL;
+	}
+	
+	for (it = macList->begin(); it != macList->end(); ++it){
+		/* inicializamos */
+		fName = NULL;
+		memset(name, '\0', sizeof(name));
+	}
+	
+	
+}
 
 /*! 			SDP SERVER			*/
 
