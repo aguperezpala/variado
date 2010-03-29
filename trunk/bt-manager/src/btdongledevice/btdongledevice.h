@@ -155,10 +155,11 @@ class BTDongleDevice {
 		
 		/* Funcion que inserta un nuevo servicio al SDP local, si y solo
 		 * si este no se encuentra ya corriendo en el server.
+		 * (Comparamos los uuid)
 		 * REQUIRES:
 		 * 	btS 	!= NULL
 		 * RETURNS:
-		 * 	> 0	on succes
+		 * 	>= 0	on succes
 		 * 	< 0	on error
 		 * NOTE: No debe ser eliminado btS luego de haber llamado a esta
 		 * 	 funcion.
@@ -216,6 +217,22 @@ class BTDongleDevice {
 		 */
 		 int disconnectPhyCon(uint16_t cHanndle, uint8_t reason);
 		
+		 /* Funcion que se conecta con el servidor SDP y establece
+		  * un nuevo servicio devolviendo un codigo de error
+		  * REQUIRES:
+		  * 	sdpData 	!= NULL
+		  * RETURNS:
+		  * 	< 0		on error
+		  * 	== 0		if success
+		  */
+		 int createSDPService(BTSDPSessionData *sdpData);
+		 
+		 /* Libera una conexion con el SDP server.
+		  * REQUIRES:
+		  * 	sdpData != NULL
+		  * NOTE: no libera memoria del sdpData.
+		  */
+		 void destroySDPService(BTSDPSessionData *sdpData);
 		
 		/* Argumentos */
 		

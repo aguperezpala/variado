@@ -17,7 +17,7 @@ void BTSDPSessionData::initialize(void)
 	this->channel = NULL;
 	memset(&this->profile,'\0', sizeof(this->profile));
 	this->session = NULL;
-	memset(&this->record, '\0', sizeof(this->record));
+	this->record = sdp_record_alloc();
 	
 }
 
@@ -101,6 +101,10 @@ BTSDPSessionData::~BTSDPSessionData(void)
 		free(this->serviceDsc);
 	if (this->serviceProv)
 		free(this->serviceProv);
+	if(this->record)
+		sdp_record_free(sdpData->record);
+	if(this->session)
+		sdp_close(this->session);
 	
 }
 

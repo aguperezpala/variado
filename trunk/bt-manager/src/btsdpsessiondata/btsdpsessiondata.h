@@ -64,7 +64,7 @@ class BTSDPSessionData {
 		sdp_data_t * channel;
 		sdp_profile_desc_t profile;
 		sdp_session_t * session ;
-		sdp_record_t record;
+		sdp_record_t *record;
 	
 	private:
 		void initialize(void);

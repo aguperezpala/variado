@@ -1,6 +1,6 @@
 Como hacer para eliminar las conexiones (physical links)
 --------------------------------------------------------
-
+(hci_disconnect()).
 
 During the time that a slave device is actively connected to a piconet there is
 always a default ACL logical transport between the slave and the master
