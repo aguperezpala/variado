@@ -12,6 +12,13 @@ void BTDongleDevice::initialize(void)
 
 int BTDongleDevice::connectToDev(uint16_t dev_id)
 {
+	/* primero verificamos si tenemos abierta una conexion, si es asi
+	 * la cerramos */
+	if (this->sock) {
+		close(this->sock); this->sock = 0;
+	}
+	
+	/* abrimos */
 	this->sock = hci_open_dev(dev_id);
 	
 	if(this->sock < 0)
@@ -46,7 +53,7 @@ string * BTDongleDevice::devInfoToStr(struct hci_dev_info * devInfo)
 	result = new string();
 	if (!result)
 		return NULL;
-	
+		
 	result->append("Dev id: ");
 	sprintf(aux, "%d",(int) devInfo->dev_id);
 	result->append(aux);
@@ -56,40 +63,53 @@ string * BTDongleDevice::devInfoToStr(struct hci_dev_info * devInfo)
 	
 	result->append("\nMac: ");
 	aux2 = batostr(&devInfo->bdaddr);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	
 	result->append("\nFlags: ");
 	aux2 = hci_dflagstostr(devInfo->flags);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	
 	result->append("\nType: ");
 	aux2 = hci_dtypetostr((int)devInfo->type);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+	}
 	
 	result->append("\nFeatures: FIXME ");
 	/* uint8_t  features[8]; */
 	
 	result->append("\nPaketType: ");
 	aux2 = hci_ptypetostr(devInfo->pkt_type);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	
 	result->append("\nLinkPolicy: ");
 	aux2 = hci_lptostr(devInfo->link_policy);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	
 	result->append("\nLinkMode: ");
 	aux2 = hci_lmtostr(devInfo->link_mode);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	result->append("\nPaketType: ");
 	aux2 = hci_ptypetostr(devInfo->pkt_type);
-	result->append(aux2);
-	free(aux2);
+	if (aux2) {
+		result->append(aux2);
+		free(aux2);
+	}
 	
 	result->append("\nACL_MTU: ");
 	sprintf(aux, "%d",(int) devInfo->acl_mtu);
@@ -363,9 +383,11 @@ string * BTDongleDevice::getInfo(void)
 */
 int BTDongleDevice::getStatus(void)
 {
+	struct hci_version ver;
 	/*! FIXME: podriamos intentar hacer un pedido al microcontrolador
 	 * y de esta forma vemos si nos responde bien o no, por ejemplo,
 	 * podriamos pedir el nombre del dispositivo o alguna otra cosa */
+	return hci_read_local_version(this->sock, &ver, 0);
 	
 }
 
@@ -417,7 +439,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	struct hci_conn_list_req *cl;
 	struct hci_conn_info *ci, *conInfo = NULL;
 	int i;
-	int adapter_id , sock;
+	int adapter_id;
 	
 	cl = (struct hci_conn_list_req *) malloc(HCI_MAX_DEV * sizeof(*ci) + sizeof(*cl));
 	if (!(cl)) {
@@ -428,7 +450,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	cl->conn_num = HCI_MAX_DEV;
 	ci = cl->conn_info;
 	
-	if (ioctl(sock, HCIGETCONNLIST, (void*)cl)) {
+	if (ioctl(this->sock, HCIGETCONNLIST, (void*)cl)) {
 		perror("No se pudo obtener la lista de conexiones");
 		free (cl);
 		return NULL;
@@ -438,6 +460,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	if (cl->conn_num <= 0) {
 		/* no obtuvimos ninguna */
 		debugp("No hay establecida ninguna conexion\n");
+		free(cl);
 		return NULL;
 	}
 	
@@ -445,6 +468,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	result = new list<struct hci_conn_info*>();
 	if (!result){
 		debugp("No hay memoria para crear la lista\n");
+		free(cl);
 		return NULL;
 	}
 	
@@ -575,7 +599,7 @@ list<bdaddr_t *> * BTDongleDevice::scanNearbyDevices(void)
 			debugp("Error pidiendo memoria para la mac\n");
 			continue;
 		}
-		bacpy(&(devices+i)->bdaddr, mac);
+		bacpy(mac, &(devices+i)->bdaddr);
 		/* ahora agregamos a la lista la mac */
 		result->push_front(mac);
 		mac = NULL;
@@ -655,9 +679,24 @@ const list<BTSDPSessionData*>* BTDongleDevice::getSDPSessions(void)
 */
 bool BTDongleDevice::removeSDPSession(BTSDPSessionData *btS)
 {
+	list<BTSDPSessionData*>::iterator it;
+	bool found = false;
+	
 	if (!btS)
 		return false;
 	
+	/* verificamos que la tengamos en este btS en la lista sdpList */
+	for (it = this->sdpList.begin(); it != this->sdpList.end(); ++it) {
+		if ((*it) && (*it) == btS) {
+			found = true;
+			break;
+		}
+	}
+	/* vemos si encontramos */
+	if (!found)
+		return false;
+	
+	/* si lo encontramos ==> eliminamos y destruimos */
 	destroySDPService(btS);
 	this->sdpList.remove(btS);
 	delete btS;
@@ -710,6 +749,7 @@ int BTDongleDevice::addSDPSession(BTSDPSessionData *btS)
 	} else {
 		/* si pudo crearse => lo agrgamos a la lista */
 		this->sdpList.push_front(btS);
+		result = 0;
 	}
 	
 	return result;
