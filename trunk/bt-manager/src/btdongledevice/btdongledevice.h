@@ -70,6 +70,7 @@ class BTDongleDevice {
 		
 		/* Devuelve el estado en el que se encuentra el dispositivo 
 		 * FIXME: verificar donde se puede obtener el estado 
+		 * (hacemos por el momento un hci_read_local_version())
 		 */
 		int getStatus(void);
 		
@@ -138,7 +139,7 @@ class BTDongleDevice {
 		 * SDP del dongle actual.
 		 * RETURNS:
 		 * 	list<const BTSDPSessionData*> *list
-		 * 	NULL	on error
+		 * NOTE: la lista puede ser vacia.
 		*/
 		const list<BTSDPSessionData*>* getSDPSessions(void);
 		

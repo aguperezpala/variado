@@ -10,13 +10,13 @@ OBJECTS = $(SOURCES:%.cpp=%.o) ../btsdpsessiondata/btsdpsessiondata.o
 all: $(TARGET) 
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -g -o $@ $^ $(LIBS)
 
 
 -include .depend
 
 .depend: $(SOURCES)
-	$(CC) -MM $(SOURCES) > .depend
+	$(CC) -MM -g $(SOURCES) > .depend
 
 
 
