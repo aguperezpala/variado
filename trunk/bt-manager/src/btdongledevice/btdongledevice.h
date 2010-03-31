@@ -140,7 +140,7 @@ class BTDongleDevice {
 		 * 	list<const BTSDPSessionData*> *list
 		 * 	NULL	on error
 		*/
-		const list<const BTSDPSessionData*>& getSDPSessions(void);
+		const list<BTSDPSessionData*>* getSDPSessions(void);
 		
 		/* Funcion que elimina un servicio (SDP) determinado,
 		 * REQUIRES:
@@ -196,7 +196,7 @@ class BTDongleDevice {
 		/* Funciones */
 		
 		/* Funcion de inicializacion */
-		void initalize(void);
+		void initialize(void);
 		
 		/* funcion que produce una conexion al dipositivo */
 		int connectToDev(uint16_t dev_id);

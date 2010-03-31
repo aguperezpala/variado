@@ -102,7 +102,7 @@ BTSDPSessionData::~BTSDPSessionData(void)
 	if (this->serviceProv)
 		free(this->serviceProv);
 	if(this->record)
-		sdp_record_free(sdpData->record);
+		sdp_record_free(this->record);
 	if(this->session)
 		sdp_close(this->session);
 	
