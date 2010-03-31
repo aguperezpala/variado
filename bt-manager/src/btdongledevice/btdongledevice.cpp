@@ -47,108 +47,108 @@ string * BTDongleDevice::devInfoToStr(struct hci_dev_info * devInfo)
 	if (!result)
 		return NULL;
 	
-	result.append("Dev id: ");
+	result->append("Dev id: ");
 	sprintf(aux, "%d",(int) devInfo->dev_id);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nName: ");
-	result.append(devInfo->name);
+	result->append("\nName: ");
+	result->append(devInfo->name);
 	
-	result.append("\nMac: ");
+	result->append("\nMac: ");
 	aux2 = batostr(&devInfo->bdaddr);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\nFlags: ");
+	result->append("\nFlags: ");
 	aux2 = hci_dflagstostr(devInfo->flags);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\nType: ");
+	result->append("\nType: ");
 	aux2 = hci_dtypetostr((int)devInfo->type);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\nFeatures: FIXME ");
+	result->append("\nFeatures: FIXME ");
 	/* uint8_t  features[8]; */
 	
-	result.append("\nPaketType: ");
+	result->append("\nPaketType: ");
 	aux2 = hci_ptypetostr(devInfo->pkt_type);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\nLinkPolicy: ");
+	result->append("\nLinkPolicy: ");
 	aux2 = hci_lptostr(devInfo->link_policy);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\LinkMode: ");
+	result->append("\nLinkMode: ");
 	aux2 = hci_lmtostr(devInfo->link_mode);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
-	result.append("\nPaketType: ");
+	result->append("\nPaketType: ");
 	aux2 = hci_ptypetostr(devInfo->pkt_type);
-	result.append(aux2);
+	result->append(aux2);
 	free(aux2);
 	
-	result.append("\nACL_MTU: ");
+	result->append("\nACL_MTU: ");
 	sprintf(aux, "%d",(int) devInfo->acl_mtu);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nACL_PKTS: ");
+	result->append("\nACL_PKTS: ");
 	sprintf(aux, "%d",(int) devInfo->acl_pkts);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nSCO_MTU: ");
+	result->append("\nSCO_MTU: ");
 	sprintf(aux, "%d",(int) devInfo->sco_mtu);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nSCO_PKTS: ");
+	result->append("\nSCO_PKTS: ");
 	sprintf(aux, "%d",(int) devInfo->sco_pkts);
-	result.append(aux);
+	result->append(aux);
 	
 	/* Ahora las stasts */
-	result.append("\n\nStats:\n");
+	result->append("\n\nStats:\n");
 	
-	result.append("\nERR_TX: ");
+	result->append("\nERR_TX: ");
 	sprintf(aux, "%d",(int) dStats->err_tx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\tERR_RX: ");
+	result->append("\tERR_RX: ");
 	sprintf(aux, "%d",(int) dStats->err_rx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nCMD_TX: ");
+	result->append("\nCMD_TX: ");
 	sprintf(aux, "%d",(int) dStats->cmd_tx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nEVT_RX: ");
+	result->append("\nEVT_RX: ");
 	sprintf(aux, "%d",(int) dStats->evt_rx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nACL_TX: ");
+	result->append("\nACL_TX: ");
 	sprintf(aux, "%d",(int) dStats->acl_tx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\tACL_RX: ");
+	result->append("\tACL_RX: ");
 	sprintf(aux, "%d",(int) dStats->acl_rx);
-	result.append(aux);
+	result->append(aux);
 		
-	result.append("\nSCO_TX: ");
+	result->append("\nSCO_TX: ");
 	sprintf(aux, "%d",(int) dStats->sco_tx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\tSCO_RX: ");
+	result->append("\tSCO_RX: ");
 	sprintf(aux, "%d",(int) dStats->sco_rx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\nBYTE_TX: ");
+	result->append("\nBYTE_TX: ");
 	sprintf(aux, "%d",(int) dStats->byte_tx);
-	result.append(aux);
+	result->append(aux);
 	
-	result.append("\tBYTE_RX: ");
+	result->append("\tBYTE_RX: ");
 	sprintf(aux, "%d",(int) dStats->byte_rx);
-	result.append(aux);
+	result->append(aux);
 	
 	return result;
 	
@@ -216,8 +216,8 @@ int BTDongleDevice::createSDPService(BTSDPSessionData *sdpData)
 	
 	// set the Bluetooth profile information
 	sdp_uuid16_create(&sdpData->profile.uuid , SERIAL_PORT_PROFILE_ID ) ;
-	profile.version = 0x0100 ;
-	profile_list = sdp_list_append( 0 , &profile ) ;
+	sdpData->profile.version = 0x0100 ;
+	sdpData->profile_list = sdp_list_append( 0 , &sdpData->profile ) ;
 	sdp_set_profile_descs (sdpData->record , sdpData->profile_list ) ;
 	
 	// make the service record publicly browsable
@@ -244,7 +244,8 @@ int BTDongleDevice::createSDPService(BTSDPSessionData *sdpData)
 			   sdpData->serviceProv , sdpData->serviceDsc);
 	
 	/*! nos vamos a conectar al sdp server del dispositivo local... */
-	sdpData->session = sdp_connect(&this->mac, BDADDR_LOCAL , SDP_RETRY_IF_BUSY );
+	sdpData->session = sdp_connect(&(this->mac), BDADDR_LOCAL, 
+					SDP_RETRY_IF_BUSY);
 	if (sdpData->session == NULL){
 		perror("Error al conectarse con el sdp local\n");
 		/* liberamos todo */
@@ -277,7 +278,7 @@ BTDongleDevice::BTDongleDevice(uint16_t dev_id)
 BTDongleDevice::BTDongleDevice(const bdaddr_t *devMac)
 {
 	int result = 0;
-	char auxMac[20] = {0};
+	char *auxMac = NULL;
 	
 	
 	if (!devMac) {
@@ -288,11 +289,13 @@ BTDongleDevice::BTDongleDevice(const bdaddr_t *devMac)
 	memcpy(&this->mac, devMac, sizeof(this->mac));
 	
 	/* ahora obtenemos el dev_id en base a la MAC */
-	if (batostr(&this->mac, auxMac) < 0){
+	auxMac = batostr(&this->mac);
+	if (auxMac == NULL){
 		debugp("Mac invalida\n");
 		return;
 	}
 	result = hci_devid(auxMac);
+	free(auxMac);
 	if (result < 0) {
 		perror("No se pudo obtener el devID de la mac determinada ");
 		return;
@@ -300,7 +303,7 @@ BTDongleDevice::BTDongleDevice(const bdaddr_t *devMac)
 	this->devID = (uint16_t) result;
 	
 	/* ahora nos conectamos */
-	connectToDev(dev_id);
+	connectToDev(this->devID);
 	
 }
 
@@ -393,8 +396,7 @@ void BTDongleDevice::setDevName(const string *name)
 		return;
 	}
 	
-	if (hci_write_local_name(this->sock, (char *)name->c_str()), 
-		0) < 0) {
+	if (hci_write_local_name(this->sock, (char *)name->c_str(), 0) < 0) {
 		perror("No se pudo escribir el nombre del dispositivo ");
 		return;
 	}
@@ -417,8 +419,8 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 	int i;
 	int adapter_id , sock;
 	
-	
-	if (!(cl = malloc(HCI_MAX_DEV * sizeof(*ci) + sizeof(*cl)))) {
+	cl = (struct hci_conn_list_req *) malloc(HCI_MAX_DEV * sizeof(*ci) + sizeof(*cl));
+	if (!(cl)) {
 		perror("No pudimos alojar memoria");
 		return NULL;
 	}
@@ -456,7 +458,7 @@ list<struct hci_conn_info *> * BTDongleDevice::getPhysicalConnections(void)
 		/* copiamos los datos del connection_info */
 		memcpy(conInfo, ci, sizeof(*conInfo));
 		/* agregamos a la lista */
-		result.push_front(conInfo);
+		result->push_front(conInfo);
 		conInfo = NULL;
 	}
 	/* liberamos la memoria */
@@ -497,7 +499,7 @@ int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason)
 		if(!(*it))
 			continue;
 		/* verificamos si la bdaddr == baDst */
-		if (bacmp((*it)->bdaddr, baDst) == 0) {
+		if (bacmp(&(*it)->bdaddr, baDst) == 0) {
 			/* son iguales ==> cerramos la conexion y salimos */
 			result = disconnectPhyCon((*it)->handle, reason);
 			/*! break; Si sacamos este break lo que conseguimos
@@ -511,14 +513,12 @@ int BTDongleDevice::closePhysicalConnection(bdaddr_t * baDst, uint8_t reason)
 		if (*it)
 			free(*it);
 	}
-	conList->erase();
-	delete conList();
+	conList->clear();
+	delete conList;
 	
 	return result;
 }
 	
-	
-}
 
 int BTDongleDevice::closePhysicalConnection(struct hci_conn_info *dst, 
 					     uint8_t reason)
@@ -553,7 +553,7 @@ list<bdaddr_t *> * BTDongleDevice::scanNearbyDevices(void)
 	maxRsp = 255; /*! max cant de dispositivos */
 	/*! limpiamos el cache */
 	flags = IREQ_CACHE_FLUSH ; 
-	devices = (inquiry_info *) malloc(max_rsp * sizeof(inquiry_info));
+	devices = (inquiry_info *) malloc(maxRsp * sizeof(inquiry_info));
 	numRsp = hci_inquiry((int) this->devID, len, maxRsp, NULL, &devices,
                  flags);
 	if ( numRsp < 0 ) {
@@ -625,7 +625,7 @@ list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList)
 		/* vamos a agregar un string null si hubo error para mantener
 		 * el mapeo */
 		fName = new string(name);
-		result.push_front(fName);
+		result->push_front(fName);
 	}
 	
 	return result;
@@ -639,9 +639,9 @@ list<string*> * BTDongleDevice::getFriendlyNames(list<bdaddr_t *> *macList)
 * 	list<const BTSDPSessionData*> *list
 * 	NULL	on error
 */
-const list<const BTSDPSessionData*>& BTDongleDevice::getSDPSessions(void)
+const list<BTSDPSessionData*>* BTDongleDevice::getSDPSessions(void)
 {
-	return this->sdpList;
+	return &this->sdpList;
 }
 
 /* Funcion que elimina un servicio (SDP) determinado,
@@ -681,17 +681,17 @@ int BTDongleDevice::addSDPSession(BTSDPSessionData *btS)
 	int result = -1;
 	bool found = false;
 	
-	if (!bts) {
+	if (!btS) {
 		debugp("recibimos un btS para agregar null\n");
 		return result;
 	}
 	
 	/* primero buscamos que no se encuentre ese servicio segun el uuid */
-	for (it = this->sdpList.begin(); it != this->sdpList.end; ++it) {
+	for (it = this->sdpList.begin(); it != this->sdpList.end(); ++it) {
 		if (!(*it))
 			continue;
 		/* comparamos */
-		if(sdp_uuid128_cmp((*it)->svc_uuid, btS->svc_uuid) == 0) {
+		if(sdp_uuid128_cmp(&(*it)->svc_uuid, &btS->svc_uuid) == 0) {
 			/* ya existe entonces no lo agrgamos */
 			found = true;
 			break;
@@ -754,7 +754,7 @@ BTDongleDevice::~BTDongleDevice(void)
 		destroySDPService(*it);
 		delete(*it);
 	}
-	this->sdpList.erease();
+	this->sdpList.erase(this->sdpList.begin(), this->sdpList.end());
 	
 	
 }
