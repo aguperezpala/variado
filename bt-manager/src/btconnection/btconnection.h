@@ -11,18 +11,32 @@
 
 #include <iostream>
 #include <string>
-/* libs de bluetooth */
+/* libs de: bluetooth, sistema, sockets  */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/hci_lib.h>
 /* libs propias */
 #include "../btsimpleserver/btsimpleserver.h"
 
+/*! Definimos el tamaño maximo del buffer auxiliar para recibir datos... */
+#define BTC_RCV_AUXBUFF		1024	/* bytes */
+
+/*! FIXME: deberiamos definir un estado de la conexion, por ejemplo, conectado
+ *	   desconectado, error, etc... por ahora lo dejamos asi nomas 
+ */
+enum {
+	BTCON_NO_ERROR,
+	BTCON_SOCK_ERROR,
+	BTCON_MAC_ERROR,
+	BTCON_SERVER_ERROR,
+	BTCON_SEND_ERROR,
+	BTCON_RECV_ERROR,
+	BTCON_CLOSED
+};
 
 using namespace::std;
-
-
 
 class BTConnection {
 	
@@ -34,7 +48,7 @@ class BTConnection {
 		 * NOTE: Se hace una copia de mac (debe ser liberada quien la
 		 *	 llamo.
 		 */
-		BTConnection(BTSimpleServer *server, bdaddr_t *mac);
+		BTConnection(BTSimpleServer *server, bdaddr_t *mac, int sock);
 		
 		/*! Las funciones de envio y recepcion NO SON BLOQUEANTES */
 		
@@ -76,19 +90,29 @@ class BTConnection {
 		/* funcion que devuelve el estado de la conexion */
 		int getStatus(void);
 		
+		/*!		FUNCIONES DE TIEMPO		*/
 		/* funcion que devuelve el tiempo en el que se recibio el ultimo
-		 * dato. */
-		time_t *getLastRecvTime(void);
+		 * dato en usec (1.000.000). */
+		long getLastRecvTime(void);
 		
 		/* funcion que devuelve el tiempo en el que se envio el ultimo
-		* dato. */
-		time_t *getLastSendTime(void);
+		* dato en usec (1.000.000). */
+		long getLastSendTime(void);
 		
 		/* funcion que devuelve a que server pertenece */
-		BTSimpleServer *getServer(void);
+		const BTSimpleServer *getServer(void);
 		
 		/* funcion que devuelve la mac destino de la conexion */
 		const bdaddr_t* getMacDest(void);
+		
+		/* Funcion que cierra la conexion */
+		void closeConnection(void);
+		
+		/*! funcion que sirve para setear el server, solo sirve
+		 * para evitar un bucle sin fin (Cuando se quieren eliminar
+		 * , esto es porque es cochino el diseño)
+		 */
+		void setServer(BTSimpleServer* s){this->server = s;};
 		
 		/* Destructor.
 		 * NOTE; Cierra la conexion en caso de que este abierta 
@@ -103,10 +127,10 @@ class BTConnection {
 		string rBuff;
 		/* buffer de envio de datos */
 		string sBuff;
-		/* tiempo en el que se recibio el ultimo dato */
-		time_t lastRecvT;
-		/* tiempo en el que se envio el ultimo dato */
-		time_t lastSendT;
+		/* tiempo en el que se recibio el ultimo dato en ms */
+		struct timeval rcvT;
+		/* tiempo en el que se envio el ultimo dato en ms */
+		struct timeval sndT;
 		/* estado actual de la conexion... */
 		int status;
 		/* socket */
