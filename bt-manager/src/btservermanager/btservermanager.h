@@ -10,6 +10,10 @@
 #ifndef BTSERVERMANAGER_H
 #define BTSERVERMANAGER_H
 
+
+
+#define _GNU_SOURCE
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -18,7 +22,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <sys/select.h>
+#include <poll.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
@@ -31,6 +35,10 @@
 #include "../btsimpleserver/btsimpleserver.h"
 #include "../simplethread/simplethread.h"
 
+
+/*! definimos los flags para el poll */
+#define BTSM_POLL_FLAGS		POLLIN | POLLPRI | POLLOUT | POLLRDHUP | POLLERR \
+| POLLHUP | POLLNVAL
 
 using namespace::std;
 
@@ -87,8 +95,11 @@ class BTServerManager : public SimpleThread {
 		 * conexiones. NOTE: notar que las conexiones no deben ser
 		 * eliminadas desde otros lados, esta clase se encarga de
 		 * manejar todo esto. 
+		 * RETURNS:
+		 * 	true 	if no error
+		 * 	false 	otherwise
 		 */
-		void removeServer(BTSimpleServer *btSS);
+		bool removeServer(BTSimpleServer *btSS);
 		
 		
 		/* Funcion que produce que la clase deje de aceptar las 
@@ -132,6 +143,28 @@ class BTServerManager : public SimpleThread {
 		~BTServerManager(void);
 		
 	private:
+		
+		/* Funcion que agrga un fd al ultimo lugar del fdSet.
+		 * RETURNS:
+		 * 	false	on error || fdSet.size() == MAX_CON_PER_DONGLE
+		 * 	true	if success
+		 */
+		bool addFdToSet(int fd);
+		
+		/* Funcion que saca un fd del set y lo re-ordena
+		 * RETURNS:
+		 * 	true 	if success
+		 *	false	on error
+		 */
+		bool removeFdFromSet(int fd);
+		
+		/* funcion que devuelve una conexion desde un fd
+		 * RETURNS:
+		 * 	NULL 	on error || if not exists
+		 * 	BTConnection != NULL	on success
+		 */
+		const BTConnection *getConFromFd(int fd);
+		
 		/* atributos */
 		
 		/* Dongle sobre el cual se va a realizar toda la estructura
@@ -149,7 +182,8 @@ class BTServerManager : public SimpleThread {
 		/* mutex usado para manejar el paralelismo */
 		pthread_mutex_t mutex;
 		/* el set de fd */
-		fd_set fdSet;
+		struct pollfd fdSet[MAX_CON_PER_DONGLE];
+		int fdSetSize;
 	
 };
 
