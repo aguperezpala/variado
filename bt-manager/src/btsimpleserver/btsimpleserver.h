@@ -23,6 +23,7 @@
 
 
 using namespace::std;
+class BTConnection;
 
 class BTSimpleServer {
 	

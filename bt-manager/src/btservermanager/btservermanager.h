@@ -11,8 +11,9 @@
 #define BTSERVERMANAGER_H
 
 
-
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+	#define _GNU_SOURCE
+#endif
 
 #include <iostream>
 #include <string>
@@ -39,6 +40,9 @@
 /*! definimos los flags para el poll */
 #define BTSM_POLL_FLAGS		POLLIN | POLLPRI | POLLOUT | POLLRDHUP | POLLERR \
 | POLLHUP | POLLNVAL
+
+/*! definimos que cantidad de servidores podemos tener */
+#define BTSM_MAX_SERVERS	5
 
 using namespace::std;
 
@@ -101,36 +105,36 @@ class BTServerManager : public SimpleThread {
 		 */
 		bool removeServer(BTSimpleServer *btSS);
 		
-		
-		/* Funcion que produce que la clase deje de aceptar las 
-		 * conexiones */
-		void stopAcceptConnections(void);
-		
 		/*! Funcion bloqueante, que se encarga de esperar nuevos
 		 * eventos (nuevas conexiones, nuevos datos recibidos, 
 		 * desconecciones, o lo que sea). devolviendo la conexion
 		 * involucrada en el evento y pasando el tipo de evento como
-		 * parametro (notar que no se manejan los servers aca, solo
-		 * las conexiones)
+		 * parametro (en caso de que se reciba una nueva conexion se
+		 * devuelve la misma y eventType = 0)
 		 * REQUIRES;
 		 * 	eventType != NULL
 		 * RETURNS:
-		 * 	if error => eventType = errCode && conn == NULL
+		 * 	if error => eventType = errCode (< 0) && conn == NULL
 		 * 	else
-		 * 	conn != NULL && evenType > 0
+		 * 	conn != NULL && evenType >= 0
 		 * NOTE: esto es practicamente un select (debemos llamarlo
 		 *	 todo el tiempo.
 		 */
 		const BTConnection *getConnectionEvent(int &eventType);
 		
-		/* funcion que se encarga de empezar a aceptar conexiones de los
-		 * servidores, es transparente para el usuario, lo que hace
-		 * es en un thread aparte, hace un select de los fd de los 
-		 * servers y espera que haya conexiones entrantes, y las va
-		 * agregando al fd_set de las conexiones (que estas son 
-		 * manejadas por getConnectionEvent())
+		/* Funcion que se encarga de verificar todas las conexiones
+		 * y sus ultimas actividades (recepcion/envio), si no se
+		 * detecta actividad dentro de los "maxInactivT" entonces
+		 * automaticamente se cierra la conexion.
+		 * NOTE: Usa un thread aparte => no es bloqueante
 		 */
-		void startAcceptConnections(void);
+		void startCheckConnTimes(void);
+		
+		/* deja de verificar la inactividade de las conexiones
+		 * (para el thread aparte)
+		 */
+		void stopCheckConnTimes(void);
+		
 		/* aca corre el thread verdadero para aceptar conexiones 
 		 * NOTE: no llamar a esta funcion
 		 */
@@ -165,6 +169,13 @@ class BTServerManager : public SimpleThread {
 		 */
 		const BTConnection *getConFromFd(int fd);
 		
+		/* funcion que devuelve un server de un fd determinado:
+		 * RETURNS;
+		 * 	NULL 		if no Server with that fd
+		 * 	BTSS != NULL	otherwise
+		 */
+		BTSimpleServer *getSSFromFd(int fd);
+		
 		/* atributos */
 		
 		/* Dongle sobre el cual se va a realizar toda la estructura
@@ -182,7 +193,7 @@ class BTServerManager : public SimpleThread {
 		/* mutex usado para manejar el paralelismo */
 		pthread_mutex_t mutex;
 		/* el set de fd */
-		struct pollfd fdSet[MAX_CON_PER_DONGLE];
+		struct pollfd fdSet[MAX_CON_PER_DONGLE + BTSM_MAX_SERVERS];
 		int fdSetSize;
 	
 };

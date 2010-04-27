@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
 /* libs propias */
-#include "../btsimpleserver/btsimpleserver.h"
+#include "../consts.h"
 
 /*! Definimos el tamaño maximo del buffer auxiliar para recibir datos... */
 #define BTC_RCV_AUXBUFF		1024	/* bytes */

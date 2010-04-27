@@ -12,7 +12,7 @@ bool BTServerManager::addFdToSet(int fd)
 	bool result = false;
 	
 	/* verificamos que no hayamos salido por la guarda */
-	if (this->fdSetSize >= MAX_CON_PER_DONGLE) {
+	if (this->fdSetSize >= MAX_CON_PER_DONGLE + BTSM_MAX_SERVERS) {
 		/* no agregamos un chori */
 		return result;
 	}
@@ -36,14 +36,14 @@ bool BTServerManager::removeFdFromSet(int fd)
 	bool result = false;
 	
 	/* lo buscamos */
-	for (i = 0; i < MAX_CON_PER_DONGLE; i++){
+	for (i = 0; i < MAX_CON_PER_DONGLE + BTSM_MAX_SERVERS; i++){
 		if (this->fdSet[i].fd == fd)
 			/* Lo encontramos ==> salimos */
 			break;
 	}
 	
 	/* verificamos que lo hayamos encontrado... */
-	if (i == MAX_CON_PER_DONGLE) {
+	if (i == MAX_CON_PER_DONGLE + BTSM_MAX_SERVERS) {
 		/* NO lo encontramos ==> devolvemos error */
 		return result;
 	}
@@ -101,6 +101,31 @@ const BTConnection *BTServerManager::getConFromFd(int fd)
 	return result;
 }
 
+/* funcion que devuelve un server de un fd determinado:
+* RETURNS;
+* 	NULL 		if no Server with that fd
+* 	BTSS != NULL	otherwise
+*/
+BTSimpleServer *BTServerManager::getSSFromFd(int fd)
+{
+	BTSimpleServer *result = NULL;
+	list<BTSimpleServer *>::iterator it;
+	
+	for(it = this->serversList.begin();it != this->serversList.end(); ++it){
+		if (!(*it)) {
+			debugp("server null?\n");
+			ASSERT(false);
+			continue;
+		}
+		if((*it)->getSocket() == fd){
+			result = (*it);
+			break;
+		}
+	}
+	
+	return result;
+}
+
 
 /*! 			Funciones publicas 				*/
 
@@ -122,7 +147,7 @@ BTServerManager::BTServerManager(BTDongleDevice *btDD)
 	this->mutex = PTHREAD_MUTEX_INITIALIZER;
 	memset(&this->fdSet, 0, sizeof(this->fdSet));
 	/* seteamos los flags para todos los pollfd */
-	for (i = 0; i < MAX_CON_PER_DONGLE; i++) {
+	for (i = 0; i < MAX_CON_PER_DONGLE + BTSM_MAX_SERVERS; i++) {
 		this->fdSet[i].events = (short) BTSM_POLL_FLAGS;
 	}
 	this->fdSetSize = 0;
@@ -317,6 +342,7 @@ bool BTServerManager::removeServer(BTSimpleServer *btSS)
 		}
 		j++;
 	}
+	
 	if (j != i) {
 		debugp("Error, no hay sdp correspondiente... :S\n");
 		ASSERT(j == i);
@@ -326,6 +352,9 @@ bool BTServerManager::removeServer(BTSimpleServer *btSS)
 		}
 		return false;
 	}
+	
+	/* borramos el fd del fdPollSet */
+	removeFdFromSet(btSS->getSocket);
 	/* borramos ahora el correspondiente server */
 	this->serversList.remove(btSS);
 	delete btSS;
@@ -339,26 +368,18 @@ bool BTServerManager::removeServer(BTSimpleServer *btSS)
 }
 
 
-/* Funcion que produce que la clase deje de aceptar las 
-* conexiones */
-void BTServerManager::stopAcceptConnections(void)
-{
-	/* llama a la funcion del padre (SimpleThread) */
-	this->stop();
-}
-
 /*! Funcion bloqueante, que se encarga de esperar nuevos
 * eventos (nuevas conexiones, nuevos datos recibidos, 
 * desconecciones, o lo que sea). devolviendo la conexion
 * involucrada en el evento y pasando el tipo de evento como
-* parametro (notar que no se manejan los servers aca, solo
-* las conexiones)
+* parametro (en caso de que se reciba una nueva conexion se
+* devuelve la misma y eventType = 0)
 * REQUIRES;
 * 	eventType != NULL
 * RETURNS:
-* 	if error => eventType = errCode && conn == NULL
+* 	if error => eventType = errCode (< 0) && conn == NULL
 * 	else
-* 	conn != NULL && evenType > 0
+* 	conn != NULL && evenType >= 0
 * NOTE: esto es practicamente un select (debemos llamarlo
 *	 todo el tiempo.
 */
@@ -366,18 +387,69 @@ const BTConnection *BTServerManager::getConnectionEvent(int &eventType)
 {
 	int pollResult = 0;
 	const BTConnection *result = NULL;
+	BTSimpleServer *ss = NULL;
+	int i = 0;
 	
 	
+	/*! primero que todo vamos a verificar si en alguna llamada anterior
+	 * a poll quedo alguna coneccion por atender... si es asi, vamos a 
+	 * devolverla antes de hacer un nuevo poll 
+	 */
+	for (i = 0; i < this->fdSetSize; i++)
+		if (this->fdSet[i].revents != 0)
+			break;
 	
-	/* ejecutamos poll */
-	pollResult = poll(&this->fdSet, this->fdSetSize, -1);
-	
-	if (pollResult <= 0) {
-		perror("error en poll\n");
-		eventType = pollResult;
-		return result;
+	/* verificamos si hay alguna */
+	if (i < this->fdSetSize) {
+		/* tenemos la conexion iesima */
+		pollResult = i;
+	} else {
+		/* hacemos poll */
+		pollResult = poll(&this->fdSet, this->fdSetSize, -1);
+		if (pollResult <= 0) {
+			perror("error en poll\n");
+			eventType = pollResult;
+			return result;
+		}
+		/* si no hubo error seteamos en pollResult el valor de la 
+		 * i-esima conexion */
+		for (i = 0; i < this->fdSetSize; i++)
+			if (this->fdSet[i].revents != 0)
+				break;
+		pollResult = i;
 	}
 	
+	/* verificamos ahora si es un server para aceptar la conexion */
+	ss = getSSFromFd(this->fdSet[pollResult].fd);
+	if (ss) {
+		int serverResult = 0;
+		
+		/* ES un server, debemos aceptar la conexion y luego devolverla */
+		
+		/* Debemos verificar que no haya poll no haya retornado error */
+		if((this->fdSet[pollResult].revents & (POLLPRI | POLLIN)) != 0){
+			eventType = 0; /* indicamos que es una nueva conn */
+			result = ss->acceptConn(&serverResult);
+			if (serverResult <= 0 || !result)
+				/* error al aceptar la conexion... */
+				eventType = serverResult;
+			
+			/* liberamos los revents */
+			this->fdSet[pollResult].revents = 0;
+			
+			return result;
+		} else {
+			debugp("error con poll y los servers al aceptar una "
+			"conexion\n");
+			/* deberiamos destruir el server... */
+			eventType = this->fdSet[pollResult].revents;
+			this->fdSet[pollResult].revents = 0;
+			removeServer(ss);
+			
+			return NULL;
+		}
+	}
+	/*! no fue un server el que detecto poll => es una conexion */
 	/* obtenemos la conexion desde el fd */
 	result = getConFromFd(this->fdSet[pollResult].fd);
 	if (!result) {
@@ -388,26 +460,93 @@ const BTConnection *BTServerManager::getConnectionEvent(int &eventType)
 	}
 	
 	eventType = (short) this->fdSet[pollResult].revents;
+	this->fdSet[pollResult].revents = 0;
 	
 	return result;
 	
 }
 
-/* funcion que se encarga de empezar a aceptar conexiones de los
-* servidores, es transparente para el usuario, lo que hace
-* es en un thread aparte, hace un select de los fd de los 
-* servers y espera que haya conexiones entrantes, y las va
-* agregando al fd_set de las conexiones (que estas son 
-* manejadas por getConnectionEvent())
+/* Funcion que se encarga de verificar todas las conexiones
+* y sus ultimas actividades (recepcion/envio), si no se
+* detecta actividad dentro de los "maxInactivT" entonces
+* automaticamente se cierra la conexion.
+* NOTE: Usa un thread aparte => no es bloqueante
 */
-void BTServerManager::startAcceptConnections(void)
+void BTServerManager::startCheckConnTimes(void)
 {
-	/*! FIXME @@ @@ @@ @@ @@ @@ @@ <hay que hacer est>> */
+	this->start();
 }
+
+/* deja de verificar la inactividade de las conexiones
+* (para el thread aparte)
+*/
+void BTServerManager::stopCheckConnTimes(void)
+{
+	this->stop();
+}
+
 /* aca corre el thread verdadero para aceptar conexiones 
 * NOTE: no llamar a esta funcion
 */
-void BTServerManager::run(void);
+void BTServerManager::run(void)
+{
+	list<const BTConnection *> conns = NULL;
+	list<const BTConnection *>::iterator it;
+	const BTSimpleServer *ss = NULL;
+	long deltaTime = 0;
+	
+	while(this->isRunning()) {
+		/* conseguimos las conexiones */
+		if (pthread_mutex_lock(&this->mutex) != 0) {
+			perror("tomando el mutex\n");	
+		}
+		conns = getConnections();
+		if (pthread_mutex_unlock(&this->mutex) != 0) {
+			perror("error al liberar el mutex\n");
+		}
+		if (!conns){ 
+			/* vamos a esperar 5 veces el tiempo de inactividad 
+			 * si no hay ninguna conexion... */
+			usleep(this->maxInactivT * 5);
+			continue;
+		}
+		if (pthread_mutex_lock(&this->mutex) != 0) {
+			perror("tomando el mutex\n");	
+		}
+		/* iteramos sobre las conexiones para verificar los tiempos 
+		 * de actividades */
+		for (it = conns->begin(); it != conns->end(); ++it) {
+			if (!(*it)) {
+				debugp("Conn null\n");
+				/*!FIXME: deberiamos buscarla dentro de los
+				 * servers y borrar la conexion */
+				continue;
+			}
+			deltaTime = min((*it)->getLastRecvTime(), 
+					 (*it)getLastSendTime());
+			if (deltaTime > this->maxInactivT) {
+				/* debemos cerrar esta conexion, sacarla de los
+				 * fdSet y ademas eliminarla */
+				(*it)->closeConnection();
+				removeFdFromSet((*it)->getSocket);
+				ss = (*it)->getServer():
+				if (ss){
+					ss->removeConn(*it);
+				} else 
+					debugp("esta conexion no tiene server..\n");
+				
+				delete (*it);
+				(*it) = NULL;
+			}
+		}
+		if (pthread_mutex_unlock(&this->mutex) != 0) {
+			perror("error al liberar el mutex\n");
+		}
+		delete conns;
+		/* dormimos durante el tiempo seteado */
+		usleep(this->maxInactivT);
+	}
+}
 
 
 /* Destructor: 
@@ -415,5 +554,15 @@ void BTServerManager::run(void);
 */
 BTServerManager::~BTServerManager(void)
 {
-	/* pthread_mutex_destroy(&this->mutex); */
+	list<BTSimpleServer *>::iterator it;
+	
+	/* liberamos todos los servers */
+	/* frenamos todo */
+	this->stop();
+	
+	for(it = this->serversList.begin();it != this->serversList.end(); ++it){
+		removeServer(*it);
+	}
+	
+	pthread_mutex_destroy(&this->mutex);
 }
