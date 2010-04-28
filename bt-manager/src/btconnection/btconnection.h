@@ -19,6 +19,7 @@
 #include <bluetooth/bluetooth.h>
 /* libs propias */
 #include "../consts.h"
+#include "../debug.h"
 
 /*! Definimos el tamaño maximo del buffer auxiliar para recibir datos... */
 #define BTC_RCV_AUXBUFF		1024	/* bytes */
@@ -43,12 +44,11 @@ class BTConnection {
 	public:
 		/* Constructor: 
 		 * REQUIRES:
-		 * 	server != NULL
 		 *	mac != NULL
 		 * NOTE: Se hace una copia de mac (debe ser liberada quien la
 		 *	 llamo.
 		 */
-		BTConnection(BTSimpleServer *server, bdaddr_t *mac, int sock);
+		BTConnection(bdaddr_t *mac, int sock);
 		
 		/*! Las funciones de envio y recepcion NO SON BLOQUEANTES */
 		
@@ -99,20 +99,11 @@ class BTConnection {
 		* dato en usec (1.000.000). */
 		long getLastSendTime(void);
 		
-		/* funcion que devuelve a que server pertenece */
-		const BTSimpleServer *getServer(void);
-		
 		/* funcion que devuelve la mac destino de la conexion */
 		const bdaddr_t* getMacDest(void);
 		
 		/* Funcion que cierra la conexion */
 		void closeConnection(void);
-		
-		/*! funcion que sirve para setear el server, solo sirve
-		 * para evitar un bucle sin fin (Cuando se quieren eliminar
-		 * , esto es porque es cochino el diseño)
-		 */
-		void setServer(BTSimpleServer* s){this->server = s;};
 		
 		/* Destructor.
 		 * NOTE; Cierra la conexion en caso de que este abierta 
@@ -135,8 +126,6 @@ class BTConnection {
 		int status;
 		/* socket */
 		int sock;
-		/* server al que pertenece */
-		BTSimpleServer *server;
 		/* la mac destino */
 		bdaddr_t mac;
 		

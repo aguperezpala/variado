@@ -13,13 +13,14 @@ void BTDManager::updateDeviceList(void)
 	list<BTDongleDevice*>::iterator it;
 	
 	sk = socket(AF_BLUETOOTH, SOCK_RAW, BTPROTO_HCI);
-	if (sk < 0)
+	if (sk < 0) {
 		printErr("Error al intentar conectarse al bus HCI\n");
 		return;
+	}
 	
 	dl = (hci_dev_list_req*) malloc(HCI_MAX_DEV * sizeof(*dr) + sizeof(*dl));
 	if (!dl) {
-		printErr("");
+		printErr("ERROR al crear dl");
 		goto done;
 	}
 	
@@ -41,23 +42,25 @@ void BTDManager::updateDeviceList(void)
 	
 	/* ahora vamos a verificar la lista de dispositivos, y vamos a verificar
 	 * si tenemos o no ese elemento... */
+	
 	for (i = 0; i < dl->dev_num; i++, dr++) {
-		if (devIDs.find(dr->dev_id) == set::end) {
+		if (devIDs.find(dr->dev_id) == devIDs.end()) {
 			/* NO lo encontramos ==> generamos uno nuevo y lo 
 			 * agregamos*/
 			btDev = NULL;
 			btDev = new BTDongleDevice(dr->dev_id);
 			if (btDev)
-				this->devicesList.insert(btDev);
+				this->devicesList.push_front(btDev);
 			else
 				debugp("Error al crear el BTDongleDevice");
-		}
+		} 
 	}
 	
 	devIDs.clear();
 	
 	free:
-	free(dl);
+	if (dl)
+		free(dl);
 	
 	done:
 	close(sk);
@@ -80,23 +83,27 @@ int BTDManager::getNumberOfDevices(int flag)
 {
 	int result = 0;
 	list<BTDongleDevice*>::iterator it;
+	struct hci_dev_info devInfo;
 	BTDongleDevice *btDev = NULL;
-	uint32_t opt = 0;
+	
+	updateDeviceList();
 	
 	if (flag < 0)
 		return this->devicesList.size();
 	
-	updateDeviceList();
+	
 	for (it = this->devicesList.begin(); it != this->devicesList.end(); ++it){
 		btDev = (*it);
 		if (!btDev){
 			this->devicesList.remove(*it);
 			continue;
-		}
-		opt = btDev->getOpt();
-		if (hci_test_bit(flag, &opt))
+		}		
+		if (btDev->getDevInfo(&devInfo) && 
+			(hci_test_bit(flag, &devInfo.flags))){
 			result++;
+		}
 	}
+	cout <<"asdasda\n";
 	return result;
 }
 	
@@ -114,8 +121,8 @@ list<BTDongleDevice *> * BTDManager::getListDevices(int flag)
 {
 	list<BTDongleDevice*>::iterator it;
 	list<BTDongleDevice*> *result = NULL;
+	struct hci_dev_info devInfo;
 	BTDongleDevice *btDev = NULL;
-	uint32_t opt = 0;
 	
 	updateDeviceList();
 	
@@ -123,7 +130,7 @@ list<BTDongleDevice *> * BTDManager::getListDevices(int flag)
 	result = new list<BTDongleDevice*>();
 	
 	if (flag < 0){
-		result = this->devicesList();
+		*result = this->devicesList;
 		return result;
 	}
 		
@@ -133,9 +140,10 @@ list<BTDongleDevice *> * BTDManager::getListDevices(int flag)
 			this->devicesList.remove(*it);
 			continue;
 		}
-		opt = btDev->getOpt();
-		if (hci_test_bit(flag, &opt))
-			result.insert(btDev);
+		
+		if (btDev->getDevInfo(&devInfo) && 
+			(hci_test_bit(flag, &devInfo.flags)))
+			result->push_front(btDev);
 	}
 	return result;
 }
@@ -146,9 +154,9 @@ BTDManager::~BTDManager(void)
 {
 	list<BTDongleDevice *>::iterator it;
 	
-	/* TEST:eliminamos todos los elementos uno por uno 
-	for (it = this->devicesList.begin(); it != this->devicesList.end(); ++it){
+	/* TEST:eliminamos todos los elementos uno por uno */
+	for (it = this->devicesList.begin(); it != this->devicesList.end(); ++it)
 		if (*it)
-			delete *it;*/
-	this.devicesList.clear();
+			delete *it;
+	this->devicesList.clear();
 }

@@ -8,7 +8,9 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
-#include "btsimpleserver.h"
+
+#include "btservermanager.h"
+#include "../btsimpleserver/btsimpleserver.h"
 #include "../btconnection/btconnection.h"
 
 #include "../tester.h"

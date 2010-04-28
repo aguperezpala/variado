@@ -376,6 +376,23 @@ string * BTDongleDevice::getInfo(void)
 	
 	/* si estamos aca => ya obtuvimos la info => la parseamos */
 	result = devInfoToStr(&devInfo);
+	return result;
+}
+
+/* funcion que devuelve hci_dev_info. 
+ * REQUIRES:
+ * 	result != NULL
+ * RETURNS:
+ * 	0 	on error
+ * 	!=0	if no error
+*/
+int BTDongleDevice::getDevInfo(struct hci_dev_info *result)
+{
+	if (!result || (hci_devinfo((int)this->devID, result) < 0)) {
+		perror("error al intentar conseguir la info del dev: ");
+		return 0;
+	}
+	return 1;
 }
 
 /* Devuelve el estado en el que se encuentra el dispositivo 

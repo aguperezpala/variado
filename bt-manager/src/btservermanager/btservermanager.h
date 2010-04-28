@@ -65,18 +65,16 @@ class BTServerManager : public SimpleThread {
 		 */
 		void setMaxInactiveTime(long usec);
 		
-		/* funcion que devuelve la lista de servidores */
+		/* funcion que devuelve la lista de servidores
+		 * NOTE: NO ELIMINAR NINGUN SERVER (usar removeServer)
+		 */
 		const list<BTSimpleServer *>* getServers(void);
 		
 		/* funcion que devuelve una lista con todas las conexiones
 		 * que tiene el server manager.
-		 * RETURNS:
-		 * 	list != NULL		if no error
-		 *	NULL			on error
-		 * NOTE: Se genera memoria para la lista, pero no para las
-		 * conexiones
+		 * NOTE: NO ELIMINAR NINGUNA CONEXION (usar removeConnection)
 		 */
-		list<const BTConnection *> *getConnections(void);
+		const list<BTConnection *> *getConnections(void);
 		
 		/*! Funcion que crea un servidor en base a un uuid, un puerto
 		 * y un tamaño de cola. Esta funcion automaticamente establece
@@ -90,20 +88,29 @@ class BTServerManager : public SimpleThread {
 		 * 	errCode (< 0 on error | 0 = No error)
 		 *	{ -1 = ENOMEM, -2 = SDP_ERROR, -3 = UNKNOWN_ERROR }
 		 */
-		int createRfcommServer(int *uuid, int port, int qSize);
+		int createRfcommServer(uint32_t *uuid, int port, int qSize);
 		
 		/* funcion que devuelve el btdongledevice */
 		BTDongleDevice *getBTDongleDevice(void);
 		
-		/* funcion que elimina un server, su service SDP, y todas sus
-		 * conexiones. NOTE: notar que las conexiones no deben ser
-		 * eliminadas desde otros lados, esta clase se encarga de
-		 * manejar todo esto. 
+		/* funcion que elimina un server, su service SDP
 		 * RETURNS:
 		 * 	true 	if no error
 		 * 	false 	otherwise
+		 * NOTE: las conexiones siguen abiertas hasta que sean 
+		 *	cerradas o eliminadas por medio de removeConnection()
 		 */
 		bool removeServer(BTSimpleServer *btSS);
+		
+		/* Funcion que va a eliminar una conexion (cerrandola tambien)
+		 * REQUIRES:
+		 * 	con != NULL
+		 * 	con € conList
+		 * RETURNS:
+		 * 	true 		on success
+		 * 	false		otherwise
+		 */
+		bool removeConnection(BTConnection *con);
 		
 		/*! Funcion bloqueante, que se encarga de esperar nuevos
 		 * eventos (nuevas conexiones, nuevos datos recibidos, 
@@ -119,8 +126,9 @@ class BTServerManager : public SimpleThread {
 		 * 	conn != NULL && evenType >= 0
 		 * NOTE: esto es practicamente un select (debemos llamarlo
 		 *	 todo el tiempo.
+		 * NOTE 2: NO eliminar la conexion....
 		 */
-		const BTConnection *getConnectionEvent(int &eventType);
+		BTConnection *getConnectionEvent(int &eventType);
 		
 		/* Funcion que se encarga de verificar todas las conexiones
 		 * y sus ultimas actividades (recepcion/envio), si no se
@@ -167,7 +175,7 @@ class BTServerManager : public SimpleThread {
 		 * 	NULL 	on error || if not exists
 		 * 	BTConnection != NULL	on success
 		 */
-		const BTConnection *getConFromFd(int fd);
+		BTConnection *getConFromFd(int fd);
 		
 		/* funcion que devuelve un server de un fd determinado:
 		 * RETURNS;
@@ -184,9 +192,10 @@ class BTServerManager : public SimpleThread {
 		/* tiempo maximo en usec que una conexion puede permanecer
 		 * inactiva */
 		long maxInactiveT;
-		/* lista de servidores, NOTE: la lista de conexiones se puede
-		 * obtener pidiendole la lista de conexiones a cada server */
+		/* lista de servidores */
 		list<BTSimpleServer *> serversList;
+		/* lista de las conexiones */
+		list<BTConnection *> conList;
 		/* lista que contiene los SDPSessionData en un mapeo uno a uno
 		 * con la lista de serversList */
 		list<BTSDPSessionData *> sdpList;

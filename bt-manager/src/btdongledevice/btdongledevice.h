@@ -15,13 +15,15 @@
 #include <iostream>
 #include <string>
 #include <list>
-#include <vector>
 /* libs de bluetooth */
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+
 /* libs propias */
+#include "../debug.h"
+#include "../consts.h"
 #include "../btsdpsessiondata/btsdpsessiondata.h"
 
 
@@ -67,6 +69,15 @@ class BTDongleDevice {
 		 * NOTE: genera memoria
 		 */
 		string * getInfo(void);
+		
+		/* funcion que devuelve hci_dev_info. 
+		* REQUIRES:
+		* 	result != NULL
+		* RETURNS:
+		* 	0 	on error
+		* 	!=0	if no error
+		*/
+		int getDevInfo(struct hci_dev_info *result);
 		
 		/* Devuelve el estado en el que se encuentra el dispositivo 
 		 * FIXME: verificar donde se puede obtener el estado 

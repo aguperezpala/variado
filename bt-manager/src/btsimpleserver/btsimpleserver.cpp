@@ -6,8 +6,7 @@
 * 	dongleMac != NULL
 *	qSize	> 0	(queueSize)
 */
-BTSimpleServer::BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port,
-				BTSDPSessionData *sdpS)
+BTSimpleServer::BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port)
 {
 	if (!dongleMac)
 		debugp("estamos recibiendo un dongleMac NULL\n");
@@ -20,13 +19,8 @@ BTSimpleServer::BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port,
 	} else
 		this->queueSize = qSize;
 	
-	this->connList.clear();
 	this->sock = 0;
 	this->port = port;
-	/* ahora creamos el SDPSessionData que vamos a usar */
-	
-	this->sdpSession = sdpS;
-	
 }
 
 /* Funcion que devuelve el socket */
@@ -47,19 +41,6 @@ int BTSimpleServer::getPort(void)
 	return this->port;
 }
 
-/* funcion que devuelve la cantidad de conexiones relacionadas
-* con este server. 
-*/
-int BTSimpleServer::getNumConnection(void)
-{
-	return this->connList.size();
-}
-
-/* funcion que devuelve la lista de conexiones */
-const list<BTConnection *>* BTSimpleServer::getConnections(void)
-{
-	return &this->connList;
-}
 
 /* funcion que devuelve la mac del dongle por el cual corre */
 const bdaddr_t *BTSimpleServer::getDongleMac(void)
@@ -73,8 +54,9 @@ const bdaddr_t *BTSimpleServer::getDongleMac(void)
 */
 int BTSimpleServer::bindSocket(void)
 {
-	struct sockaddr_rc localAddr = {0};
+	struct sockaddr_rc localAddr;
 	
+	memset(&localAddr, 0, sizeof(struct sockaddr_rc));
 	/* creamos el socket primero */
 	this->sock = socket(AF_BLUETOOTH, SOCK_STREAM | SOCK_NONBLOCK,
 			     BTPROTO_RFCOMM);
@@ -84,11 +66,11 @@ int BTSimpleServer::bindSocket(void)
 	}
 	
 	/* intentamos hacer el bind ahora */
-	locAddr.rc_family = AF_BLUETOOTH;
-	bacpy(&locAddr.rc_bdaddr, &this->localMac);
-	locAddr.rc_channel = (uint8_t) this->port;
+	localAddr.rc_family = AF_BLUETOOTH;
+	bacpy(&localAddr.rc_bdaddr, &this->localMac);
+	localAddr.rc_channel = (uint8_t) this->port;
 	
-	if (bind(this->sock, (struct sockaddr *)&locAddr, sizeof(locAddr)) < 0){
+	if (bind(this->sock, (struct sockaddr *)&localAddr, sizeof(localAddr)) < 0){
 		perror("Error al hacer el bind\n");
 		return -1;
 	}
@@ -122,6 +104,7 @@ BTConnection *BTSimpleServer::acceptConn(int *result)
 {
 	struct sockaddr_rc remoteAddr = {0};
 	BTConnection *conn = NULL;
+	socklen_t opt = sizeof(remoteAddr);
 	
 	
 	if (!result){
@@ -130,7 +113,7 @@ BTConnection *BTSimpleServer::acceptConn(int *result)
 	}
 	
 	*result = accept(this->sock, (struct sockaddr*) &remoteAddr,
-			 sizeof(remoteAddr));
+			 &opt);
 	if (*result <= 0) {
 		perror("Error al aceptar una conexion\n");
 		return NULL;
@@ -138,47 +121,20 @@ BTConnection *BTSimpleServer::acceptConn(int *result)
 	
 	/* si estamos aca es porque realmente tenemos una nueva conexion 
 	 * creamos una nueva BTConnection entonces */
-	conn = new BTConnection(this, &remoteAddr.rc_bdaddr, *result);
+	conn = new BTConnection(&remoteAddr.rc_bdaddr, *result);
 	if (!conn) {
 		debugp("Error al intentar crear una nueva conexion\n");
 		return NULL;
 	}
-	/* agregamos la conexion a la lista de conexiones */
-	this->connList.push_front(conn);
-	
+
 	return conn;
-	
-	
-	
 }
 
-/* Funcion que elimina una conexion de la lista 
-* REQUIRES:
-* 	conn != NULL
-* 	conn € connList
-*/
-void BTSimpleServer::removeConn(const BTConnection *conn)
-{
-	if (!conn)
-		return;
-	this->connList.remove(conn);
-}
 
 /* Destructor:
 * Elimina todas las conexiones y las cierra una por una 
 */
 BTSimpleServer::~BTSimpleServer(void)
 {
-	list<BTConnection *>::iterator it;
-	
-	for (it = this->connList.begin(); it != this->connList.end(); ++it) {
-		if(!(*it)) {
-			this->connList.remove(*it);
-			continue;
-		}
-		(*it)->closeConnection();
-		/* hacemos un detach del server */
-		(*it)->setServer(NULL);
-	}
 	close(this->sock);
 }

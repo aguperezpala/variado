@@ -1,6 +1,5 @@
 /*! Es el server mismo (de bajo nivel) que hace el bind / listen en un puerto 
  *  determinado con una direccion determinada.
- *  Tambien se encarga de mostrar/esconder el servicio en el server SDP.
  * NOTE: solo estamos usando RFCOMM_SERVERS
  */  
 #ifndef BTSIMPLESERVER_H
@@ -15,15 +14,13 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/rfcomm.h>
 /* libs propias */
 #include "../btconnection/btconnection.h"
-#include "../btservermanager/btservermanager.h"
-#include "../btsdpsessiondata/btsdpsessiondata.h"
 
 
 
 using namespace::std;
-class BTConnection;
 
 class BTSimpleServer {
 	
@@ -35,8 +32,7 @@ class BTSimpleServer {
 		 * 	port € [1,30]
 		 * 	sdpS (puede ser NULL)
 		 */
-		BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port, 
-				BTSDPSessionData *sdpS);
+		BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port);
 		
 		/* Funcion que devuelve el socket */
 		int getSocket(void);
@@ -46,14 +42,6 @@ class BTSimpleServer {
 		
 		/* funcion que devuelve el puerto */
 		int getPort(void);
-		
-		/* funcion que devuelve la cantidad de conexiones relacionadas
-		 * con este server. 
-		 */
-		int getNumConnection(void);
-		
-		/* funcion que devuelve la lista de conexiones */
-		const list<BTConnection *>* getConnections(void);
 		
 		/* funcion que devuelve la mac del dongle por el cual corre */
 		const bdaddr_t *getDongleMac(void);
@@ -83,20 +71,6 @@ class BTSimpleServer {
 		 */
 		BTConnection *acceptConn(int *result);
 		
-		/* Funcion que elimina una conexion de la lista 
-		 * REQUIRES:
-		 * 	conn != NULL
-		 * 	conn € connList
-		 */
-		void removeConn(const BTConnection *conn);
-		
-		/* funcion que devuelve la sdpSession actual 
-		 * RETURNS:
-		 * 	NULL 		if no sdpSession
-		 *	sdpS != NULL	otherwise
-		 */
-		BTSDPSessionData *getSDPSession(void){return this->sdpSession;};
-				
 		/* Destructor:
 		 * Elimina todas las conexiones y las cierra una por una 
 		 */
@@ -109,14 +83,11 @@ class BTSimpleServer {
 		bdaddr_t localMac;
 		/* Tamaño de la cola (de posibles conexiones simultaneas */
 		int queueSize;
-		/* lista de conexiones activas */
-		list<BTConnection *> connList;
 		/* socket */
 		int sock;
 		/* puerto en el que va a tener que escuchar */
 		int port;
-		/* sesion en el servidor SDP */
-		BTSDPSessionData *sdpSession;
+		
 };
 
 
