@@ -2,15 +2,18 @@
 
 /* Constructor: 
 * REQUIRES:
-* 	server != NULL
+* 	mac != NULL
 */
-BTConnection::BTConnection(BTSimpleServer *server, bdaddr_t *mac, int sock)
+BTConnection::BTConnection(bdaddr_t *mac, int sock)
 {
 	/* inicializamos */
 	this->rBuff.clear();
 	this->sBuff.clear();
-	this->lastRecvT = 0;
-	this->lastSendT = 0;
+	
+	/* seteamos el tiempo en el que se creo la conexion */
+	gettimeofday(&this->rcvT, NULL);
+	gettimeofday(&this->sndT, NULL);
+	
 	this->status = BTCON_NO_ERROR;
 	if (sock <= 0) {
 		debugp("Nos dieron un socket invalido\n");
@@ -23,12 +26,6 @@ BTConnection::BTConnection(BTSimpleServer *server, bdaddr_t *mac, int sock)
 		this->status = BTCON_MAC_ERROR;
 	} else
 		bacpy(&this->mac, mac);
-	if (!server) {
-		debugp("Server nulo\n");
-		this->status = BTCON_SERVER_ERROR;
-	}
-	this->server = server;
-	
 }
 
 /*! Las funciones de envio y recepcion NO SON BLOQUEANTES */
@@ -63,7 +60,7 @@ int BTConnection::sendData(string &data)
 		this->status = BTCON_SEND_ERROR;
 	} else {
 		/* pudimos transmitir => debemos sacar result bytes del sBuff */
-		this->sBuff.remove(0,result);
+		this->sBuff.erase(0,result);
 	}
 	return result;
 	
@@ -79,7 +76,6 @@ int BTConnection::sendData(string &data)
 int BTConnection::recvData(void)
 {
 	ssize_t result = 0;
-	size_t len = 0;
 	char auxBuff[BTC_RCV_AUXBUFF];
 	
 	result = recv(this->sock, auxBuff, BTC_RCV_AUXBUFF, MSG_DONTWAIT);
@@ -161,6 +157,7 @@ long BTConnection::getLastRecvTime(void)
 long BTConnection::getLastSendTime(void)
 {
 	struct timeval aux;
+	long result = 0;
 	
 	gettimeofday(&aux, NULL);
 	
@@ -169,12 +166,6 @@ long BTConnection::getLastSendTime(void)
 		(aux.tv_usec - this->sndT.tv_usec));
 	
 	return result;
-}
-
-/* funcion que devuelve a que server pertenece */
-BTSimpleServer *BTConnection::getServer(void)
-{
-	return this->server;
 }
 
 /* funcion que devuelve la mac destino de la conexion */
@@ -187,16 +178,7 @@ const bdaddr_t* BTConnection::getMacDest(void)
 /* Funcion que cierra la conexion */
 void BTConnection::closeConnection(void)
 {
-	/*! FIXME: aca debemos tener en cuenta de avisarle al server que vamos
-	 * a cerrar la conexion, para que este pueda determinar cuantas
-	 * conexiones tenga y en base a esto saber si tiene que dejar de
-	 * mostrar el servicio o no... SDP (deberiamos en realidad fijarnos
-	 * en getPhysicalConnections, ya que puede que se haya establecido
-	 * conexiones con otros dispositivos para formar la scarnett.
-	 */
 	close(this->sock);
-	if (this->server)
-		this->server->removeConn(this);
 }
 
 /* Destructor.
