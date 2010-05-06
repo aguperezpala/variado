@@ -63,7 +63,9 @@ MY_CFLAGS =
 MY_LIBS   = -lbluetooth
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -Wall -ansi -pedantic -Werror
+CPPFLAGS  = -Wall -ansi -pedantic -Werror -I. -I.. -I../btdongledevice -I../btconnection \
+-I../btdmanager -I../btsdpsessiondata -I../btservermanager -I../btsimpleserver \
+-I../simplethread
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   =

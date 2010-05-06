@@ -28,18 +28,17 @@
 #include <sys/ioctl.h>
 #include <bluetooth/bluetooth.h>
 /* libs propias */
-#include "../consts.h"
-#include "../debug.h"
-#include "../btconnection/btconnection.h"
-#include "../btsdpsessiondata/btsdpsessiondata.h"
-#include "../btdongledevice/btdongledevice.h"
-#include "../btsimpleserver/btsimpleserver.h"
-#include "../simplethread/simplethread.h"
+#include "consts.h"
+#include "debug.h"
+#include "btconnection.h"
+#include "btsdpsessiondata.h"
+#include "btdongledevice.h"
+#include "btsimpleserver.h"
+#include "simplethread.h"
 
 
 /*! definimos los flags para el poll */
-#define BTSM_POLL_FLAGS		POLLIN | POLLPRI | POLLOUT | POLLRDHUP | POLLERR \
-| POLLHUP | POLLNVAL
+#define BTSM_POLL_FLAGS		POLLIN | POLLPRI | POLLNVAL
 
 /*! definimos que cantidad de servidores podemos tener */
 #define BTSM_MAX_SERVERS	5
@@ -161,7 +160,7 @@ class BTServerManager : public SimpleThread {
 		 * 	false	on error || fdSet.size() == MAX_CON_PER_DONGLE
 		 * 	true	if success
 		 */
-		bool addFdToSet(int fd);
+		bool addFdToSet(int fd, int flags);
 		
 		/* Funcion que saca un fd del set y lo re-ordena
 		 * RETURNS:

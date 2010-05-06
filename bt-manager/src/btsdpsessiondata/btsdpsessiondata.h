@@ -15,7 +15,7 @@
 #include <bluetooth/sdp_lib.h>
 
 #include <stdlib.h>
-#include "../debug.h"
+#include "debug.h"
 
 
 using namespace::std;

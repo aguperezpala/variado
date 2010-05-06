@@ -16,9 +16,9 @@
 #include <bluetooth/hci_lib.h>
 #include <stdlib.h>
 /* libs propias */
-#include "../debug.h"
-#include "../consts.h"
-#include "../btdongledevice/btdongledevice.h"
+#include "debug.h"
+#include "consts.h"
+#include "btdongledevice.h"
 
 
 

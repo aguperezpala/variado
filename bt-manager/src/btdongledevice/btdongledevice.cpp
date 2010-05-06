@@ -333,6 +333,35 @@ int BTDongleDevice::connectToDevice(void)
 	return connectToDev(this->devID);
 }
 
+/* Funcion que hace visible el dispositivo.
+* RETURNS:
+* 	< 0 	on error
+*	== 0	if success
+*/
+int BTDongleDevice::makeDevDiscoverable(void)
+{
+	int ctl = 0, err = 0;
+	struct hci_dev_req dr;
+	
+	
+	/* flags hci.h */
+	dr.dev_opt = SCAN_PAGE | SCAN_INQUIRY;
+	dr.dev_id = this->devID;
+	
+	ctl = hci_open_dev((int)this->devID);	
+	if (ctl < 0) {
+		perror("No pudimos hacer visible el dongleDev");
+		return ctl;
+	}
+	
+	err = ioctl(ctl, HCISETSCAN, (void *) &dr);
+	if (err < 0) {
+		perror("makeDevDiscoverable: ioctl error");
+		return err; 
+	}
+	/* todo salio bien */
+	return 0;
+}
 
 /* Funcion que devuelve el ID del dispositivo */
 uint16_t BTDongleDevice::getID(void)
