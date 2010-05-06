@@ -16,7 +16,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
 /* libs propias */
-#include "../btconnection/btconnection.h"
+#include "btconnection.h"
 
 
 
@@ -30,7 +30,6 @@ class BTSimpleServer {
 		 * 	dongleMac != NULL
 		 *	qSize	> 0	(queueSize)
 		 * 	port € [1,30]
-		 * 	sdpS (puede ser NULL)
 		 */
 		BTSimpleServer(const bdaddr_t *dongleMac, int qSize, int port);
 		

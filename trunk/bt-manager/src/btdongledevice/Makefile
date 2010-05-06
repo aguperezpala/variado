@@ -63,14 +63,16 @@ MY_CFLAGS =
 MY_LIBS   = -lbluetooth
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = -Wall -lbluetooth -lpthread
+CPPFLAGS  = -Wall -lbluetooth -lpthread -I. -I.. -I../btdongledevice -I../btconnection \
+-I../btdmanager -I../btsdpsessiondata -I../btservermanager -I../btsimpleserver \
+-I../simplethread
 
 # The options used in linking as well as in any direct use of ld.
-LDFLAGS   =
+LDFLAGS   = 
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.
-SRCDIRS   = ../btsdpsessiondata .
+SRCDIRS   = ../btsdpsessiondata . ..
 
 # The executable file name.
 # If not specified, current directory name or `a.out' will be used.

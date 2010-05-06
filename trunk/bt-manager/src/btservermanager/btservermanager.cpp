@@ -7,7 +7,7 @@
 * 	false	on error || fdSet.size() == MAX_CON_PER_DONGLE
 * 	true	if success
 */
-bool BTServerManager::addFdToSet(int fd)
+bool BTServerManager::addFdToSet(int fd, int flags)
 {
 	bool result = false;
 	
@@ -18,6 +18,7 @@ bool BTServerManager::addFdToSet(int fd)
 	}
 	
 	this->fdSet[this->fdSetSize].fd = fd;
+	this->fdSet[this->fdSetSize].events = flags;
 	/* si lo agregamos */
 	result = true;
 	this->fdSetSize++;
@@ -238,7 +239,7 @@ int BTServerManager::createRfcommServer(uint32_t *uuid, int port, int qSize)
 	this->sdpList.push_front(sdpS);
 	
 	/* ahora agregamos al fdSet el fd del server */
-	addFdToSet(ss->getSocket());
+	addFdToSet(ss->getSocket(), BTSM_POLL_FLAGS);
 	
 	/* desbloqueamos el mutex */
 	if (pthread_mutex_unlock(&this->mutex) != 0) {
@@ -401,9 +402,12 @@ BTConnection *BTServerManager::getConnectionEvent(int &eventType)
 	 * a poll quedo alguna coneccion por atender... si es asi, vamos a 
 	 * devolverla antes de hacer un nuevo poll 
 	 */
-	for (i = 0; i < this->fdSetSize; i++)
-		if (this->fdSet[i].revents != 0)
+	for (i = 0; i < this->fdSetSize; i++){
+		if (this->fdSet[i].revents != 0) {
+			
 			break;
+		}
+	}
 	
 	/* verificamos si hay alguna */
 	if (i < this->fdSetSize) {
@@ -439,6 +443,13 @@ BTConnection *BTServerManager::getConnectionEvent(int &eventType)
 			if (serverResult <= 0 || !result)
 				/* error al aceptar la conexion... */
 				eventType = serverResult;
+			else {
+				/* aceptamos la conexion bien, la agregamos
+				 * a la lista de conexiones y agregamos su
+				 * socket al set */
+				addFdToSet(result->getSocket(), BTSM_POLL_FLAGS);
+				this->conList.push_front(result);
+			}
 			
 			/* liberamos los revents */
 			this->fdSet[pollResult].revents = 0;

@@ -22,9 +22,9 @@
 #include <bluetooth/hci_lib.h>
 
 /* libs propias */
-#include "../debug.h"
-#include "../consts.h"
-#include "../btsdpsessiondata/btsdpsessiondata.h"
+#include "debug.h"
+#include "consts.h"
+#include "btsdpsessiondata.h"
 
 
 using namespace::std;
@@ -48,6 +48,13 @@ class BTDongleDevice {
 		 * 	codeError
 		 */
 		int connectToDevice(void);
+		
+		/* Funcion que hace visible el dispositivo.
+		 * RETURNS:
+		 * 	< 0 	on error
+		 *	== 0	if success
+		 */
+		int makeDevDiscoverable(void);
 		
 		/* Funcion que devuelve el ID del dispositivo */
 		uint16_t getID(void);
