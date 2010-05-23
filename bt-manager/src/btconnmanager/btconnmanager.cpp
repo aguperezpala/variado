@@ -1,10 +1,30 @@
 #include "btconnmanager.h"
 
+/*!	###		FUNCIONES PRIVADAS		###	*/
+
+/* funcion que hace cambia un struct fd de la posicion j a la posicion i
+ * fdSet[i] = fdSet[j];
+* REQUIRES:
+* 	i,j <= fdSetSize
+*/
+void BTConnManager::fdSetAssign(int i, int j)
+{
+	assert(j < this->fdSetSize);
+	assert(i < this->fdSetSize);
+	
+	this->fdSet[i].fd = this->fdSet[j].fd;
+	this->fdSet[i].revents = this->fdSet[j].revents;
+	this->fdSet[i].events = this->fdSet[j].events;
+	
+}
+
+
 /* funcion que duplica el tamaño del fdSet */
 void BTConnManager::increasefdSetSize(void)
 {
 	this->fdSetMaxSize *= 2;
-	realloc((void *) this->fdSet,this->fdSetMaxSize);
+	this->fdSet = (struct pollfd*) realloc((void *) this->fdSet,
+						this->fdSetMaxSize);
 	
 }
 
@@ -74,16 +94,23 @@ bool BTConnManager::removeFdFromSet(int fd)
 	/* swap */
 	if (i == this->fdSetSize - 1) {
 		this->fdSet[i].fd = 0;
+		this->fdSetSize--;
 	} else if (i < this->connPtr) {
 		/* es un server.. */
-		this->fdSet[i].fd = this->fdSet[this->fdSetSize - 1].fd;
-		this->fdSet[i].revents = this->fdSet[this->fdSetSize - 1].revents;
-		this->fdSet[this->fdSetSize - 1].fd = 0;
-		this->fdSet[this->fdSetSize - 1].revents = 0;
+		/* primero traemos el ultimo server */
+		fdSetAssign(i, this->connPtr - 1);
+		/* movemos la ultima conexion al espacio vacio */
+		fdSetAssign(this->connPtr - 1, this->fdSetSize - 1);
+		this->connPtr--;
+		this->fdSetSize--;
 		
+	} else {
+		/* es una conexion normal */
+		fdSetAssign(i, this->fdSetSize - 1);
+		this->fdSetSize--;
 	}
-	/* borramos 1 */
-	this->fdSetSize--;
+	
+	
 	
 	return result;
 }
@@ -93,8 +120,129 @@ bool BTConnManager::removeFdFromSet(int fd)
 * 	NULL 	on error || if not exists
 * 	BTConnection != NULL	on success
 */
-BTConnection *BTConnManager::getConFromFd(int fd);
+BTConnection *BTConnManager::getConFromFd(int fd)
+{
+	list<BTConnection *>::iterator it;
+	BTConnection *result = NULL;
+	
+	
+	/* si no hubo error debemos buscar cual conexion produjo el evento.. */
+	if (this->connList.size() == 0) {
+		debugp("no tenemos conexiones!!!?\n");
+		return result;
+	}
+	for (it = this->connList.begin(); it != this->connList.end(); ++it) {
+		if (!(*it)) {
+			debugp("con null?\n");
+			ASSERT(false);
+			continue;
+		}
+		if ((*it)->getSocket() == fd) {
+			/* lo encontramos */
+			result = *it;
+			break;
+		}
+	}
+	
+	return result;
+}
 
+/* funcion que devuelve un server desde un fd
+* RETURNS:
+* 	NULL 	on error || if not exists
+* 	BTSimpleServer != NULL	on success
+*/
+BTSimpleServer *BTConnManager::getServerFromFd(int fd)
+{
+	list<BTSimpleServer *>::iterator it;
+	BTSimpleServer *result = NULL;
+	
+	
+	/* si no hubo error debemos buscar cual conexion produjo el evento.. */
+	if (this->serverList.size() == 0) {
+		debugp("no tenemos servers!!!?\n");
+		return result;
+	}
+	for (it = this->serverList.begin(); it != this->serverList.end(); ++it) {
+		if (!(*it)) {
+			debugp("con null?\n");
+			ASSERT(false);
+			continue;
+		}
+		if ((*it)->getSocket() == fd) {
+			/* lo encontramos */
+			result = *it;
+			break;
+		}
+	}
+	
+	return result;
+}
+
+
+/* Funcion que devuelve el indice correspondiente en el fdSet
+* segun un socket determinado.
+* RETURNS:
+* 	< 0	if not found
+* 	i > 0	otherwise
+*/
+int BTConnManager::getIndexFromFd(int fd)
+{
+	int i = 0;
+	
+	for(i = 0; i < this->fdSetSize; i++) {
+		if (this->fdSet[i].fd == fd)
+			break;
+	}
+	
+	if (i == this->fdSetSize)
+		return -1;
+	
+	return i;
+}
+
+/* Funcion que devuelve la primera conexion que tiene revens
+* distinto de 0, y en caso de que no haya ninguna conexion
+* con revents != 0, hace poll esperando alguna.
+* RETURNS:
+* 	index (fdSet[index].revents != 0)
+*	< 0	on error
+*/
+int BTConnManager::getIndexFdWithEvents(void)
+{
+	int i = 0;
+	int pollResult = 0;
+	
+	for (i = 0; i < this->fdSetSize; i++){
+		if (this->fdSet[i].revents != 0) {
+			break;
+		}
+	}
+	
+	/* verificamos si hay alguna */
+	if (i < this->fdSetSize) {
+		/* tenemos la conexion iesima */
+		return i;
+	} else {
+		/* hacemos poll */
+		pollResult = poll(this->fdSet, this->fdSetSize, -1);
+		if (pollResult <= 0) {
+			perror("error en poll\n");
+			return -1;
+		}
+	}
+	for (i = 0; i < this->fdSetSize; i++){
+		if (this->fdSet[i].revents != 0) {
+			break;
+		}
+	}
+	return i;
+	
+}
+
+
+
+/*!	###		FUNCIONES PUBLICAS		### 	*/
 
 /* constructor */
 BTConnManager::BTConnManager(void)
@@ -102,9 +250,9 @@ BTConnManager::BTConnManager(void)
 	this->serverList.clear();
 	this->connList.clear();
 	this->fdSet = (struct pollfd *) calloc(10,sizeof(struct pollfd));
-	int fdSetMaxSize = 10;
-	int fdSetSize = 0;
-	int connPtr = 0;
+	this->fdSetMaxSize = 10;
+	this->fdSetSize = 0;
+	this->connPtr = 0;
 }
 
 /* funcion que permite agregar un server para chequear sus
@@ -112,14 +260,24 @@ BTConnManager::BTConnManager(void)
 * REQUIRES:
 * 	server != NULL
 */
-void BTConnManager::insertServer(BTSimpleServer *server);
+void BTConnManager::insertServer(BTSimpleServer *server)
+{
+	assert(server != NULL);
+	this->serverList.push_back(server);
+	addServerFdToSet(server->getSocket(), BTCM_SERVER_POLL_FLAGS);
+}
 
 /* funcion que permite agregar una conexion para verificar
 * sus eventos.
 * REQUIRES:
 * 	c 	!= NULL
 */
-void BTConnManager::insertConnection(BTConnection *c);
+void BTConnManager::insertConnection(BTConnection *c)
+{
+	assert(c != NULL);
+	this->connList.push_back(c);
+	addConnFdToSet(c->getSocket(), BTCM_POLL_IN_FLAGS | BTCM_POLL_OUT_FLAGS);
+}
 
 /* Funcion que permite setear flags (events) de chequeo en una
 * conexion determinada. (cuando se quiera enviar datos por ej
@@ -128,7 +286,23 @@ void BTConnManager::insertConnection(BTConnection *c);
 * 	c 	!= NULL
 * 	c 	€ connList
 */
-void BTConnManager::setFlags(short events);
+void BTConnManager::setFlags(BTConnection *c, short events)
+{	
+	int index = 0;
+	
+	if (c == NULL) {
+		debugp("SetFlags con c null\n");
+		return;
+	}
+	index = getIndexFromFd(c->getSocket());
+	if (index < 0) {
+		debugp("No se encuentra el fd\n");
+		return;
+	}
+	/* si se encontro, entonces cambiamos las flags */
+	this->fdSet[index].events = events;
+	
+}
 
 
 /*! Funcion principal, encargada de devolver la conexion
@@ -146,7 +320,92 @@ void BTConnManager::setFlags(short events);
 *
 * NOTE: genera memoria
 */
-int BTConnManager::getConnEvent(btaddr_t *addr, int &result);
+eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
+{
+	int i = 0;
+	int fd = 0, events = 0;
+	bool isFinish = false;
+	BTConnection *newCon = NULL;
+	
+	
+	assert(addr != NULL);
+	
+	while (!isFinish) {
+		/* primero obtenemos la posicion de la conexion que tiene 
+		* revents != 0 */
+		i = getIndexFdWithEvents();
+		if (i < 0){
+			/* nos dio error. devolvemos error */
+			return BTCM_EV_ERR;
+		}
+		fd = this->fdSet[i].fd;
+		events = this->fdSet[i].revents;
+		this->fdSet[i].revents = 0;
+		/* tenemos el i-esimo fd con eventos... */
+		if (i < this->connPtr) {
+			/* es un server... */
+			if(events & (BTCM_SERVER_POLL_FLAGS)) {
+				/* estamos por aceptar una conexion */
+				BTSimpleServer *ss = getServerFromFd(fd);
+				/*! aca debemos asegurarnos que exista */
+				assert(ss != NULL);
+				newCon = ss->acceptConn(&result);
+				result = fd;
+				if (newCon == NULL)
+					/*!### ERROR al aceptar una conexion */
+					return BTCM_EV_ACCEPT_ERR;
+				/* si la aceptamos la agregamos a la lista y agregamos
+				* su fd */
+				insertConnection(newCon);
+				/* copiamos su mac */
+				bacpy(addr, newCon->getMacDest());
+				return BTCM_EV_NEW_CONN;
+			} else {
+				/* estamos recibiendo un error de un server */
+				debugp("Un server genero un evento inesperado\n");
+				result = fd;
+				return BTCM_EV_SERVER_ERR;
+			}
+			
+		} else {
+			BTConnection *con = getConFromFd(fd);
+			
+			result = fd;
+			assert(con != NULL);
+			bacpy(addr, con->getMacDest());
+			/* es una conexion... hay 3 casos, recepcion, envio,
+			 * error. */
+			if (events & (BTCM_POLL_IN_FLAGS)) {
+				/* tenemos datos para leer */
+				result = con->recvData();
+				this->fdSet[i].revents = events ^ (BTCM_POLL_IN_FLAGS);
+				return BTCM_EV_RCV;
+			}
+			if (events & (BTCM_POLL_OUT_FLAGS)) {
+				/* Debemos verificar si la conexion realmente
+				 * tiene datos para mandar o solo hay que
+				 * desactivar el flag */
+				if (con->getSendBuff().size() == 0) {
+					/* no tenemos datos => sacamos el flag */
+					this->fdSet[i].events = events ^ POLLOUT;
+					/* buscamos proximo evento reportable */
+					continue;
+				}
+				/* si estamos aca es porque realmente debemos
+				 * enviar datos */
+				result = con->sendData();
+				return BTCM_EV_OUT;
+			}
+			
+			/*! si estamos aca es porque hubo un error, ya sea
+			 * porque nos cerraron la conexion o lo que sea */
+			con->closeConnection();
+			return BTCM_EV_CLOSE_CONN;
+		}
+	}
+	
+	return BTCM_EV_ERR;
+}
 
 
 

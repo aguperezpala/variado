@@ -9,7 +9,8 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include "btconnection.h"
-#include "../tester.h"
+#include "btconnmanager.h"
+#include "tester.h"
 
 
 

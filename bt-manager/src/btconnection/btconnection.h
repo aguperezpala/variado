@@ -60,6 +60,7 @@ class BTConnection {
 		 * 	<= 0			on error
 		 */
 		int sendData(string &data);
+		int sendData(void);	/* usada para poll */
 		
 		/* Funcion que recibe datos del socket, almacenandolos en el
 		 * buffer de recepcion (tener en cuenta que se hace un append

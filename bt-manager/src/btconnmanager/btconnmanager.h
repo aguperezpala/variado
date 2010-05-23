@@ -10,19 +10,37 @@
 #include <string>
 #include <list>
 #include <stdlib.h>
+#include <assert.h>
 /* libs de: bluetooth, sistema, sockets  */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <poll.h>
 /* libs propias */
-#include "simpleserver.h"
+#include "btsimpleserver.h"
 #include "btconnection.h"
-
 #include "consts.h"
 #include "debug.h"
 
 using namespace::std;
+
+/*! definimos las banderas para las conexiones / servers que se insertan */
+#define BTCM_POLL_IN_FLAGS		POLLIN | POLLPRI | POLLNVAL
+#define BTCM_POLL_OUT_FLAGS		POLLOUT
+
+
+#define BTCM_SERVER_POLL_FLAGS		BTCM_POLL_IN_FLAGS
+
+/*! definimos tipos de eventos que pueden devolverse */
+typedef enum {
+	BTCM_EV_NEW_CONN,	/* cuando se recibe una conexion */
+	BTCM_EV_OUT,		/* cuando se puede enviar, y se envian datos */
+	BTCM_EV_CLOSE_CONN,	/* conexion cerrada */
+	BTCM_EV_RCV,		/* cuando se puede recibir */
+	BTCM_EV_SERVER_ERR,	/* cuando un servidor produce un error */
+	BTCM_EV_ACCEPT_ERR,	/* cuando hay un error al aceptar una conexion */
+	BTCM_EV_ERR		/* algun error */
+} eventType_t;
 
 class BTConnManager{
 	
@@ -55,7 +73,7 @@ class BTConnManager{
 		 * 	list != null
 		 */
 		 const list<BTSimpleServer *>& getServersList(void) 
-		 {return this->serversList;};
+		 {return this->serverList;};
 		 
 		 /* Funcion que devuelve la lista de todas las conexiones que
 		  * se estan verificando los eventos
@@ -72,7 +90,7 @@ class BTConnManager{
 		  * 	c 	!= NULL
 		  * 	c 	€ connList
 		  */
-		 void setFlags(short events);
+		 void setFlags(BTConnection *c, short events);
 		 
 		
 		 /*! Funcion principal, encargada de devolver la conexion
@@ -84,13 +102,15 @@ class BTConnManager{
 		  * REQUIRES:
 		  * 	addr != NULL
 		  * RETURNS:
-		  * 	eType	= see poll
+		  * 	eType	= type of the event
 		  * 	addr 	= connection involved in the event
 		  * 	result	= (operation result, i.e: bytes Send | received)
 		  *
+		  * En caso de error (eType = algun error) en result devolvemos
+		  * el fd que lo produjo.
 		  * NOTE: genera memoria
 		  */
-		 int getConnEvent(btaddr_t *addr, int &result);
+		 eventType_t getConnEvent(bdaddr_t *addr, int &result);
 		 
 		 /* Destructor.
 		  * NOTE: NO libera ninguna conexion ni nada 
@@ -99,6 +119,13 @@ class BTConnManager{
 		
 	private:
 		/* 			funciones			*/
+		
+		/* funcion que hace cambia un struct fd de la posicion j a la posicion i
+		* fdSet[i] = fdSet[j];
+		* REQUIRES:
+		 * 	i,j <= fdSetSize
+		 */
+		void fdSetAssign(int i, int j);
 		
 		/* funcion que duplica el tamaño del fdSet */
 		void increasefdSetSize(void);
@@ -131,6 +158,30 @@ class BTConnManager{
 		* 	BTConnection != NULL	on success
 		*/
 		BTConnection *getConFromFd(int fd);
+		
+		/* funcion que devuelve un server desde un fd
+		* RETURNS:
+		* 	NULL 	on error || if not exists
+		* 	BTSimpleServer != NULL	on success
+		*/
+		BTSimpleServer *getServerFromFd(int fd);
+		
+		/* Funcion que devuelve el indice correspondiente en el fdSet
+		 * segun un socket determinado.
+		 * RETURNS:
+		 * 	< 0	if not found
+		 * 	i > 0	otherwise
+		 */
+		int getIndexFromFd(int fd);
+		
+		/* Funcion que devuelve la primera conexion que tiene revens
+		 * distinto de 0, y en caso de que no haya ninguna conexion
+		 * con revents != 0, hace poll esperando alguna.
+		 * RETURNS:
+		 * 	index (fdSet[index].revents != 0)
+		 *	< 0	on error
+		 */
+		int getIndexFdWithEvents(void);
 		
 		/*			 atributos 			*/
 		/* Lista de servidores */
