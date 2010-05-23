@@ -66,6 +66,31 @@ int BTConnection::sendData(string &data)
 	
 }
 
+/* usada para poll */
+int BTConnection::sendData(void)
+{
+	ssize_t result = 0;
+	size_t len = 0;
+	
+	/*!FIXME: debemos verificar si string data soporta cualquier caracter
+	* o si hay que utilizar otro tipo de datos, byte_buff o algo raro */
+	
+	/* ahora intentamos mandar datos */
+	len = this->sBuff.size();
+	result = send(this->sock, this->sBuff.c_str(), len, MSG_DONTWAIT);
+	
+	/*! actualizamos el tiempo de envio */
+	gettimeofday(&this->sndT, NULL);
+	
+	if (result < 0) {
+		perror("Error al intentar enviar: ");
+		this->status = BTCON_SEND_ERROR;
+	} else {
+		/* pudimos transmitir => debemos sacar result bytes del sBuff */
+		this->sBuff.erase(0,result);
+	}
+	return result;
+}
 /* Funcion que recibe datos del socket, almacenandolos en el
 * buffer de recepcion (tener en cuenta que se hace un append
 * con los nuevos datos en el buffer).
