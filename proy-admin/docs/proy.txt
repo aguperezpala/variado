@@ -1,0 +1,5 @@
+Que tiene que tener
+* Determinar porcentaje de completado del proyecto
+* Determinar porcentajes por modulo y por funciones.
+* Poder agregar directorios (y que busque en sub-dirs) archivos *.h,c,cpp.
+* Poder agregar tareas a realizar por modulo y en general.
