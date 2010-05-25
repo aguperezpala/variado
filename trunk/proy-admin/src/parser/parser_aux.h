@@ -1,23 +1,19 @@
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_AUX_H
+#define PARSER_AUX_H
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <stdio.h>
-#include <perror.h>
+#include <stdlib.h>
 
+#include "parser.h"
 #include "function.h"
 #include "module.h"
 
-/*! vamos a definir las palabras claves para buscar los pesos y esas cosas */
-#define MODULE_WEIGHT	"MODULE_WEIGHT"
-#define FUNC_COMPLETED	"FUNC_COMPLETED"
-#define FUNC_WEIGHT	"FUNCTION_WEIGHT"
-#define VALUE_SEPARATOR ";"
-#define VALUE_ASSIGN	"="
-#define PARSER_BLANKS	"\n\t "
 
+#define PARSER_OPEN_COMMENT	"/*"
+#define PARSER_CLOSE_COMMENT	"*/"
 
 using namespace std;
 

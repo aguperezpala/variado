@@ -1,142 +1,4 @@
-#include "parser.h"
-
-/*! Funcion que devuelve un valor determinado segun un nombre de una KEY
- * determinada. 
- * REQUIRES:
- * 	data	where search
- * 	key	to find
- * 	value	to fill
- * RETURNS:
- * 	0 	if success
- * 	< 0	otherwise
-*/
-static int parser_search_key(string &data,string &key, string &value)
-{
-	int pos = data.find(key);
-	int assignPos = 0;
-	int sepPos = 0;
-	int i = 0;
-	string blanks = PARSER_BLANKS;
-	
-	if (pos < 0)
-		return pos;
-	/* si lo encontramos, ahora buscamos el valor y lo extraemos */
-	assignPos = data.find(VALUE_ASSIGN, pos);
-	if (assignPos < 0) {
-		cerr << "no se encontro assignPos " << key << " \n";
-		return -1;
-	}
-	
-	/* debemos ver que no hay ningun otro caracter entre medio */
-	i = pos + key.size();
-	while (i < assignPos) {
-		if((int)blanks.find(data[i]) >= 0)
-			i++;
-		else
-			break;
-	}
-	
-	if(i < assignPos)
-		/* hay otra cosa rara...*/
-		return -1;
-	
-	
-	sepPos = data.find(VALUE_SEPARATOR, assignPos); 
-	if (sepPos < 0) {
-		cerr << "no se encontro sepPos " << key << " \n";
-		return -1;
-	}
-	/* extraemos en teoria el valor y devolvemos */
-	value = data.substr(assignPos + 1, sepPos - assignPos - 1);
-	
-	
-	return 0;
-}
-
-/*! Funcion que extrae una palabra desde una posicion determinada (from) 
- *  saltiandose todos los caracteres pertenecientes a charsTo y luego
- *  tomando todos aquellos caracteres hasta encontrar nuevamente otro € chartsTo
- * REQUIRES:
- * 	from	<= data.size()
- *	charsTo	!= NULL
- * RETURNS:
- * 	word	!= NULL if success
- * 	NULL	otherwise
- * NOTE: genera memoria
- */
-static string *parse_word(string &data, uint32_t from, const char *charsTo)
-{
-	string *result = NULL;
-	string aux = charsTo;
-	uint32_t to = 0;
-	uint32_t size = data.size();
-	
-	assert(charsTo != NULL);
-	assert(from >= 0);
-	assert(from <= data.size());
-	
-	while (from < size)
-		if((int)aux.find(data[from]) >= 0)
-			from++;
-		else
-			break;
-		
-	if (from == size)
-		/* no hay palabra */
-		return NULL;
-	
-	/* aca en from tenemos la posicion tal que es un caracter que no
-	* pertenece a charsTo. ahora debemos buscar la posicion final
-	*/
-	to = from;
-	while (to < size)
-		if((int)aux.find(data[to]) < 0)
-			to++;
-		else
-			break;
-	
-	result = new string(data.substr(from, to-from));
-	
-	return result;
-}
-
-/*! Funcion que parsea un comentario devolviendolo en un string, buscando
- * desde una posicion determinada, con 2 strings necesarios, uno para 
- * especificar como comienza un comentario, y el otro determinando como
- * termina el comentario.
- * NOTE: devuelve el comentario sin los caracteres de comentarios
- * REQUIRES:
- * 	from <= data.size()
- * 	openComment != NULL
- * 	closeComment != NULL
- * RETURNS:
- * 	NULL		if cant find or error
- * 	comment		otherwise
- * 	from		devuelve la posicion donde termina el comentario
- */
-static string *parser_get_comment(string &data, int &from, 
-				   string &openComment, string &closeComment)
-{
-	string *result = NULL;
-	int pos = 0, endPos = 0;
-	
-	if (from < data.size())
-		return result;
-	
-	/* buscamos la posicion donde comienza el comentario */
-	pos = data.find(openComment, from);
-	if (pos < 0)
-		return result;
-	
-	endPos = data.find(closeComment, pos + 1);
-	if (endPos < 0)
-		return result;
-	
-	from = endPos;
-	result = new string(data.substr(pos, endPos-pos + closeComment.size()));
-	
-	return result;
-}
+#include "parser_aux.h"
 
 
 /* Funcion que busca un valor numerico (entero )
@@ -165,7 +27,7 @@ static int parser_search_int_key(string &data,string &key, int &value)
  * 	NULL		othereise
  * NOTE: Genera memoria
  */
-static string *parser_read_all_file(char *fname)
+static string *parser_read_all_file(const char *fname)
 {
 	char *buffer;
 	ifstream is;
@@ -200,7 +62,7 @@ static string *parser_read_all_file(char *fname)
 	
 	is.close();
 	/*! FIXME: ineficiente! */
-	result = new String(buffer, fLength);
+	result = new string(buffer, fLength);
 	delete[] buffer;
 	
 	return result;
@@ -226,7 +88,14 @@ static string *parse_module_name(string &data, int &type)
 	if (pos < 0)
 		pos = data.find("Class");
 	if (pos < 0){
-		result = parse_word(data, 0, PARSER_BLANKS);
+		int auxP = data.find("#ifndef");
+		
+		if (auxP < 0)
+			return result;
+		/* salteamos el #ifndef */
+		auxP += 8;
+		
+		result = parse_word(data, auxP, PARSER_BLANKS);
 		if(result != NULL) {
 			/* sacamos el _H */
 			type = 1;
@@ -249,6 +118,7 @@ static string *parse_module_name(string &data, int &type)
 }
 
 
+
 /* Funcion que va a parsear todas las funciones de un archivo, extrayendo
  * tanto el FUNC_COMPLETED como el FUNC_WEIGHT, y el nombre.
  * RETURNS:
@@ -259,19 +129,71 @@ static string *parse_module_name(string &data, int &type)
 static list<Function *> *parser_functions(string &data)
 {
 	list<Function *> *result = NULL;
+	Function *func = NULL;
 	string *comment = NULL;
+	string opCmt = PARSER_OPEN_COMMENT, cCmt = PARSER_CLOSE_COMMENT;
+	string funCmp = FUNC_COMPLETED;
+	string funWt = FUNC_WEIGHT;
+	string *funcName = NULL,blanks = PARSER_BLANKS;
 	int pos = 0;
+	uint32_t upos = 0;
+	int completed = 0, weight = 0;
 	
 	if (data.size() == 0)
 		return result;
 	
 	result = new list<Function *>();
+	if (result == NULL)
+		return result;
 	
 	while (pos >= 0) {
+		comment = parser_get_comment(data, pos, opCmt, cCmt);
+		if (comment == NULL)
+			/* no hay mas comentarios... salimos */
+			break;
 		
-		pos = data.find(FUNC_COMPLETED
+		/* buscamos el FUNC_COMPLETED */
+		if ((parser_search_int_key(*comment, funCmp, completed) < 0) ||
+			(completed > 100) || (completed < 0)) {
+			/* no es un comentario valido.. */
+			delete comment;
+			continue;
+		}
+		/* extraemos el peso de la funcion */
+		if ((parser_search_int_key(*comment, funWt, weight) < 0) ||
+			(weight < 0)) {
+			/* no es un comentario valido.. */
+			delete comment;
+			continue;
+		}
+		delete comment;
+		/* salteamos los blancos */
+		pos = pos + 1;
+		upos = pos;
+		while (upos < data.size())
+			if((int)blanks.find(data[upos]) >= 0)
+				upos++;
+			else
+				break;
+		/* extraemos el nombre de la funcion ahora */
+		funcName = parse_word(data, upos, "{;");
+		if ((funcName == NULL) || (funcName->size() > 400)){
+			/* error no estamos tomando una funcion */
+			cerr << "Error al intentar obtener el prototipo de ";
+			cerr << "la funcion, no estan respetando el formato?" << endl;
+			continue;
+		}
+		/* si estamos aca entonces podemos decir que tenemos una func */
+		func = new Function(*funcName, completed, weight);
+		delete funcName;
+		if (func == NULL){
+			cerr << "no hay memoria para crear la funcion\n";
+			break;
+		}
+		result->push_back(func);
+	}
 		
-	result
+	return result;
 	
 }
 
@@ -291,19 +213,22 @@ int parse_file(string &fname, Module &m)
 {
 	string *fData = NULL;
 	string *modName = NULL;
-	string sAux = "";
+	string sAux = "", sValue = "";
 	int iAux = 0;
+	list<Function *>* fList = NULL;
+	list<Function *>::iterator it;
 	
 	
 	fData = parser_read_all_file(fname.c_str());
 	if(fData == NULL) {
 		return -1;
 	}
+	m.setFileName(fname);
 	
 	/* comenzamos a parsear */
 	/* obtenemos el peso */
 	sAux = MODULE_WEIGHT;
-	if (parser_search_key(*fData, sAux, iAux) < 0) {
+	if (parser_search_int_key(*fData, sAux, iAux) < 0) {
 		delete fData;
 		return -1;
 	}
@@ -312,6 +237,28 @@ int parse_file(string &fname, Module &m)
 		m.setWeight(iAux);
 	else 
 		cerr << "error al obtener el peso del modulo: " << iAux << endl;
+	
+	/* ahora vamos a ver si esta testeado o no */
+	sAux = MODULE_TESTED;
+	if(parser_search_key(*fData, sAux, sValue) < 0) {
+		cerr << "No se pudo determinar si el modulo fue testeado o no\n";
+		m.setTested(false);
+	} else {
+		int i = 0;
+		/* determinamos el valor de value */
+		while (sValue[i])
+		{
+			sValue[i] = toupper(sValue[i]);
+			i++;
+		}
+		cout << "sValue: " << sValue << endl;
+		if((int)sValue.find("TRUE") >= 0)
+			m.setTested(true);
+		else if((int)sValue.find("FALSE") >= 0)
+			m.setTested(false);
+		else
+			cerr << "MODULE_TESTED no respeta el formato \n";
+	}
 	
 	iAux = -1;
 	/* obtenemos el tipo y el nombre del modulo */
@@ -326,6 +273,7 @@ int parse_file(string &fname, Module &m)
 		else if (iAux == 2)
 			m.setType(MODULE_T_CLASS);
 		else {
+			m.setType(MODULE_T_UNKNOWN);
 			cerr << "error al obtener el tipo de modulo: " << iAux;
 			cerr << endl;
 		}
@@ -333,10 +281,23 @@ int parse_file(string &fname, Module &m)
 		/* no tenemos nombre de modulo, seteamos el nombre del archivo */
 		cerr << "no se pudo encontrar nombre del modulo\n";
 		m.setName(fname);
+		m.setType(MODULE_T_UNKNOWN);
 	}
 	
 	/* ahora obtenemos la lista de funciones */
+	fList = parser_functions(*fData);
+	if (fList == NULL) {
+		cerr << "No se pudieron obtener funciones del modulo\n";
+		delete fData;
+		return -2;
+	}
+	/* agregamos las funciones al modulo */
+	for (it = (*fList).begin(); it != (*fList).end(); ++it) {
+		assert(*it != NULL);
+		m.addFunction(*it);
+	}
+	delete fData;
+	delete fList;
 	
-	
-	
+	return 0;
 }

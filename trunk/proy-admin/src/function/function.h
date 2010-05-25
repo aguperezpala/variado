@@ -3,6 +3,10 @@
 
 #include <iostream>
 #include <string>
+#include <assert.h>
+
+using namespace std;
+
 
 class Function {
 	
@@ -22,10 +26,13 @@ class Function {
 		int getCompleted(void){return this->completed;};
 		
 		/* setea/obtiene el peso */
-		void setWeight(int w){this->weight= c;};
+		void setWeight(int w){this->weight= w;};
 		int getWeight(void){return this->weight;};
 		
 		~Function(){};
+		
+		/* debug */
+		void Print(void);
 	
 	private:
 		int completed;	/* % de completado de la funcion */
