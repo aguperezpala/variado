@@ -4,11 +4,13 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 class Note {
 	
 	public:
 		/* constructor */
-		Note(){};
+		Note();
 		
 		/* Constructor para setear todo de una */
 		Note(string &n){this->note = n;};
@@ -19,6 +21,9 @@ class Note {
 		
 		
 		~Note(){};
+		
+		/*debug */
+		void Print(void){cout << note << endl;};
 	
 	private:
 		string note;

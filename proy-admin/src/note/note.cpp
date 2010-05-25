@@ -1,2 +1,8 @@
-#include "note.cpp"
+#include "note.h"
+
+Note::Note(void)
+{
+	return;
+}
+
 

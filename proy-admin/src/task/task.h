@@ -6,6 +6,10 @@
 #include <string.h>
 #include <time.h>
 
+
+using namespace std;
+
+
 /* Enumeramos las prioridades */
 enum {
 	TASK_P_LOW,	
@@ -37,7 +41,7 @@ class Task {
 		string &getDescription(void){return this->desc;};
 		
 		/* setea/obtiene titulo */
-		void setTitle(string &t){this->title = d;};
+		void setTitle(string &t){this->title = t;};
 		string &getTitle(void){return this->title;};
 		
 		/* setea/obtiene el tiempo de creacion */
@@ -61,6 +65,9 @@ class Task {
 		int getPriority(void){return this->priority;};
 		
 		~Task(){};
+		
+		/*debug*/
+		void Print(void);
 	
 	private:
 		string desc;
