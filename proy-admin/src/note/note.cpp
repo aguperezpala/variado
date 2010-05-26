@@ -25,3 +25,8 @@ string *Note::toString(void)
 {	
 	return new string(this->note);
 }
+
+bool Note::operator==(Note &other)
+{
+	return (this->note.compare(other.getNote()) == 0);
+}

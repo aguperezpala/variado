@@ -117,6 +117,15 @@ string *Task::toString(void)
 	return result;
 }
 
+/* vamos a comparar 2 task segun su desc (porque nos conviene) */
+bool Task::operator==(Task &other)
+{
+	if(this->desc.compare(other.getDescription()) == 0)
+		return true;
+	return false;
+}
+
+
 void Task::Print(void)
 {
 	cout << "\nTask desc: " << this->desc;

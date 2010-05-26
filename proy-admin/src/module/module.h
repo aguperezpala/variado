@@ -10,6 +10,7 @@
 #include "task.h"
 #include "note.h"
 #include "parser_aux.h"
+#include "file_aux.h"
 
 
 using namespace std;

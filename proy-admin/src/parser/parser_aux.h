@@ -25,16 +25,6 @@ using namespace std;
 */
 int parser_search_int_key(string &data,string &key, int &value);
 
-/* Funcion que lee un archivo completo y devuelve en un string el contenido
-* del archivo.
-* REQUIRES:
-* 	fname != NULL
-* RETURNS:
-* 	string	!= NULL	if success
-* 	NULL		othereise
-* NOTE: Genera memoria
-*/
-string *parser_read_all_file(const char *fname);
 
 /* Funcion que se encarga de parsear o encontrar el nombre del modulo
 * RETURNS:

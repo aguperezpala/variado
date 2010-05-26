@@ -173,3 +173,28 @@ string *parser_get_comment(string &data, int &from,
 }
 
 
+/*! funcion que saltea los caracteres cs y devuelve la posicion luego de saltear
+* los caracteres especificados
+* REQUIRES:
+* 	cs != NULL
+* RETURNS:
+* 	< 0	on error
+* 	pos	otherwise
+*/
+int parser_jump_chars(string &d, int from, const char* cs)
+{
+	int size = d.size();
+	string aux = "";
+	
+	assert(cs != NULL);
+	
+	aux = cs;
+	
+	while (from < size)
+		if((int)aux.find(data[from]) >= 0)
+			from++;
+		else
+			break;
+	return from;
+}
+
