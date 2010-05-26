@@ -1,7 +1,7 @@
 /*! Modulo encargado de manipular los directorios
  */
-#ifndef DIR_MANAGER_H
-#define DIR_MANAGER_H
+#ifndef DIR_MOD_AUX_H
+#define DIR_MOD_AUX_H
 
 #ifndef _BSD_SOURCE
 	#define _BSD_SOURCE
@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <vector>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <list>
 
@@ -46,7 +47,15 @@ int dirm_list_files(string &dir, vector<string> &files, const char *match);
  *	end	(como debe terminar) | NULL para no verificar esto
  * 	
 */
-void drim_filter(vector<string> &ent, const char *begin, const char *end);
+void dirm_filter(vector<string> &ent, const char *begin, const char *end);
 
+
+/* Funcion que devuelve llena un vector con todos los directorios partiendo de
+ * uno raiz e ingresando recursivamente en todos.
+ * NOTE: los directorios van a tener la forma: rpath/xx/xx..
+ */
+void dirm_get_rdirs(vector<string> &dirs, string &rpath);
+
+ 
 
 #endif

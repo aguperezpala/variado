@@ -53,6 +53,36 @@ int parser_search_key(string &data, string &key, string &value)
 	return 0;
 }
 
+/*! funcion que parsea un value entre 2 elementos
+* RETURNS:
+*  	< 0	on error
+*  	0	on success
+*/
+int getValue(string &d, int from, const char *beg, const char *end, string &value)
+{
+	int bp = 0, ep = 0;
+	
+	
+	if (beg == NULL || end == NULL)
+		return -1;
+	
+	bp = d.find(beg, from);
+	ep = d.find(end,bp+1);
+	
+	if (bp < 0 || ep < 0 || ep < bp)
+		return -1;
+	
+	bp = bp + strlen(beg);
+	
+	if (ep < bp)
+		return -1;
+	
+	value = d.substr(bp, ep-bp);
+	
+	return 0;
+}
+
+
 /*! Funcion que extrae una palabra desde una posicion determinada (from) 
  *  saltiandose todos los caracteres pertenecientes a charsTo y luego
  *  tomando todos aquellos caracteres hasta encontrar nuevamente otro € chartsTo

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include "parser.h"
 
 using namespace std;
 
@@ -29,6 +30,28 @@ class Function {
 		void setWeight(int w){this->weight= w;};
 		int getWeight(void){return this->weight;};
 		
+		/* setea/obtiene tested*/
+		void setTested(bool t){this->tested = t;};
+		bool getTested(void){return this->tested;};
+		
+		/*! Genera una funcion desde un string respetando el formato
+		* asignado para guardar las funciones
+		* RETURNS:
+		* 	< 0	on error
+		*	0	if success
+		*/
+		int fromString(string &str);
+		
+		/*! Convierte una funciones en un string listo para ser guardada
+		* en un archivo.
+		* RETURNS:
+		*	NULL		if error
+		*	funcStr		otherwise
+		* NOTE: Genera memoria
+		*/
+		string *toString(void);
+		
+		
 		~Function(){};
 		
 		/* debug */
@@ -37,6 +60,7 @@ class Function {
 	private:
 		int completed;	/* % de completado de la funcion */
 		int weight;	/* peso de la funcion en el modulo */
+		bool tested;
 		string name;
 	
 };

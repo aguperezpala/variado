@@ -1,12 +1,14 @@
-#ifndef NOTE_H
-#define NOTE_H
+/*! Es un poco un parser tambien
+ * Este modulo se encarga de abrir los archivos y escribirlos
+#ifndef FILEMANAGER_H
+#define FILEMANAGER_H
 
 #include <iostream>
 #include <string>
 
 using namespace std;
 
-class Note {
+class FileManager {
 	
 	public:
 		/* constructor */
