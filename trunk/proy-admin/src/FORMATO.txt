@@ -1,5 +1,7 @@
-FORMATO DE LOS ARCHIVOS
------------------------
+********************************************************************************
+			FORMATO DE LOS ARCHIVOS
+			-----------------------
+********************************************************************************
 
 Para que los archivos puedan ser reconocidos hay que establecer un formato
 determinado. Por el momento solo vamos a reconocer archivos .h.
@@ -43,9 +45,10 @@ en comentarios separados, pueden estar incluidos dentro de otros comentarios.
 
 
 
+********************************************************************************
+		FORMATO (de como vamos a guadar los tads)
+********************************************************************************
 
-FORMATO (de como vamos a guadar los tads)
------------------------------------------
 
 TAD NOTE
 --------
@@ -69,8 +72,57 @@ TAD MODULE
 <mod-fn>file-name<mod-notes>NOTAS<mod-tasks>TASKS<module;>
 
 con:
-NOTAS=<mod-not>nota1<mod-not>nota2<mod-not>....<mod-not>notaN<mod-not>
-TASKS=<mod-tas>task1<mod-tas>task2<mod-tas>....<mod-tas>taskN<mod-tas>
+NOTAS = <mod-not>nota1<mod-not>nota2<mod-not>....<mod-not>notaN<mod-not>
+TASKS = <mod-tas>task1<mod-tas>task2<mod-tas>....<mod-tas>taskN<mod-tas>
+
+
+
+TAD PROJECT
+-----------
+<proj-name>name<proj-dsc>description<proj-dir>projDir<proj-t>tested<proj-co>
+canCompile<proj-mods>MODULES<proj-notes>NOTES<proj-tasks>TASKS<project;>
+
+con:
+MODULES = <proj-mod>modFileName<proj-mod>....
+donde modFileName es el nombre del modulo (module->getName() ++ ".mod"), no es
+el nombre del archivo del modulo.
+
+NOTAS = <proj-not>nota1<proj-not>nota2<proj-not>....<proj-not>notaN<proj-not>
+TASKS = <proj-tas>task1<proj-tas>task2<proj-tas>....<proj-tas>taskN<proj-tas>
+
+
+
+
+
+
+
+
+********************************************************************************
+				SEARCHER
+********************************************************************************
+El archivo de configuracion debe estar hecho de la siguiente forma
+
+X = Y;
+
+X representa la cadena a buscar en los archivos source y no puede tener '\n'.
+Y representa la accion a realizar una vez encontrada la cadena X.
+Y puede tener las siguientes formas
+SEARCHER_TASK_K_BUGFIX,		/* es una tarea para reparar un bug */
+SEARCHER_TASK_K_REVISION,	/* es una tarea para revisar algo */
+SEARCHER_TASK_K_TODO,		/* tarea normal */
+SEARCHER_TASK_k_IMPROVE,		/* tarea de mejoramiento */
+SEARCHER_TASK_K_NORMAL		/* tarea normal..? wtf XD */
+SEARCHER_NOTE
+donde en cada caso se generara lo que representa y sera asociada al modulo
+en el que se encontro.
+
+* Notar que searcher buscara tanto en los archivo headers como los source (que 
+tengan el mismo nombre que el header pero con diferente extencion).
+
+
+
+
+
 
 
 

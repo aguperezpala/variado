@@ -81,6 +81,9 @@ class Task {
 		*/
 		string *toString(void);
 		
+		/* vamos a comparar 2 task segun su desc (porque nos conviene) */
+		bool operator==(Task &other);
+		
 		~Task(){};
 		
 		/*debug*/

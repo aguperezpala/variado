@@ -29,55 +29,6 @@ int parser_search_int_key(string &data,string &key, int &value)
 	return 0;
 }
 
-/* Funcion que lee un archivo completo y devuelve en un string el contenido
- * del archivo.
- * REQUIRES:
- * 	fname != NULL
- * RETURNS:
- * 	string	!= NULL	if success
- * 	NULL		othereise
- * NOTE: Genera memoria
- */
-string *parser_read_all_file(const char *fname)
-{
-	char *buffer;
-	ifstream is;
-	string *result = NULL;
-	int fLength = 0;
-	
-	assert(fname != NULL);
-	
-	/* abrimos el archivo y lo leemos completo */
-	is.open (fname, ios::binary );
-	if (!is.good()) {
-		cerr << "Error al abrir el archivo\n";
-		return NULL;
-	}
-	
-	// obtenemos el tamaño y lemos todo
-	is.seekg (0, ios::end);
-	fLength = is.tellg();
-	is.seekg (0, ios::beg);
-	
-	// pedimos memoria
-	buffer = new char [fLength];	
-	// leemos
-	is.read (buffer,fLength);
-	if (is.fail()) {
-		cerr << "error al leer el archivo\n";
-		delete[] buffer;
-		is.close();
-		return NULL;
-	}
-		
-	
-	is.close();
-	/*! FIXME: ineficiente! */
-	result = new string(buffer, fLength);
-	delete[] buffer;
-	
-	return result;
-}
 
 /* Funcion que se encarga de parsear o encontrar el nombre del modulo
  * RETURNS:

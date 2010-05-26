@@ -75,6 +75,14 @@ string *parser_get_comment(string &data, int &from,
 			    string &openComment, string &closeComment);
 
 
-
+/*! funcion que saltea los caracteres cs y devuelve la posicion luego de saltear
+ * los caracteres especificados
+ * REQUIRES:
+ * 	cs != NULL
+ * RETURNS:
+ * 	< 0	on error
+ * 	pos	otherwise
+ */
+int parser_jump_chars(string &d, int from, const char* cs);
 
 #endif

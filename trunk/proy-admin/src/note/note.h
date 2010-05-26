@@ -36,6 +36,7 @@ class Note {
 		void setNote(string &n){this->note = n;};
 		string &getNote(void){return this->note;};
 		
+		bool operator==(Note &other);
 		
 		~Note(){};
 		
