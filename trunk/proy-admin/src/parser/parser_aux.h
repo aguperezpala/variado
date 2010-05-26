@@ -17,21 +17,41 @@
 
 using namespace std;
 
-/*! Funcion que va a tomar un nombre de archivo y lo que va hacer es 
- * devolver un modulo con el nombre, el peso del modulo y sus funciones.
- * NOTE: Fijarse que debe respetarse el formato de los modulos.
- *
- * REQUIRES:
- * 	fname	!= NULL
- * RETURNS:
- * 	errCode
- * NOTE: Genera memoria para cada funcion (si no hay error)
- */
-int parse_file(string &fname, Module &m);
 
+/* Funcion que busca un valor numerico (entero )
+* RETURNS:
+* 	< 0	on error
+*	0	if success
+*/
+int parser_search_int_key(string &data,string &key, int &value);
 
+/* Funcion que lee un archivo completo y devuelve en un string el contenido
+* del archivo.
+* REQUIRES:
+* 	fname != NULL
+* RETURNS:
+* 	string	!= NULL	if success
+* 	NULL		othereise
+* NOTE: Genera memoria
+*/
+string *parser_read_all_file(const char *fname);
 
+/* Funcion que se encarga de parsear o encontrar el nombre del modulo
+* RETURNS:
+* 	NULL			on error
+* 	modName != NULL		if success
+* 	type = (none = 0, 1 = normal_module, 2 = class)
+*/
+string *parse_module_name(string &data, int &type);
 
+/* Funcion que va a parsear todas las funciones de un archivo, extrayendo
+* tanto el FUNC_COMPLETED como el FUNC_WEIGHT, y el nombre.
+* RETURNS:
+* 	list<Function *>*	if not error
+* 	NULL			on error
+* NOTE: genera memoria para cada funcion y para la lista
+*/
+list<Function *> *parser_functions(string &data);
 
 
 

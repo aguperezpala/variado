@@ -25,7 +25,7 @@ Funciones/Metodos
 Cada funcion/metodo debe tener un comentario inmediatamente por encima de su
 definicion de la siguiente forma.
 
-FUNC_COMPLETED = X;	FUNCTION_WEIGHT = Y;
+FUNC_COMPLETED = X;	FUNCTION_WEIGHT = Y; 	FUNC_TESTED = Z;
 
 Donde COMPLETED indica el porcentaje (en enteros) de cuanto esta completa
 la funcion determinada. FUNCTION_WEIGHT indica el peso que tiene la funcion
@@ -34,10 +34,43 @@ el modulo en la cual esta definida).
 La separacion entre COMPLETED = X y FUNCTION_WEIGHT puede ser tanto un espacio,
 enter, tabulador. La unica restriccion es que luego de cada valor (X | Y) debe
 ir un ';'.
+Z puede ser TRUE | FALSE (puede ser minuscula/mayuscula).
 
 
 Los comentarios que indican las diferentes cosas NO es necesario que esten
 en comentarios separados, pueden estar incluidos dentro de otros comentarios.
+
+
+
+
+
+FORMATO (de como vamos a guadar los tads)
+-----------------------------------------
+
+TAD NOTE
+--------
+No tiene un formato especifico, simplemente la nota...
+
+
+
+TAD TASK
+---------
+<task-desc>descripcion<task-title>title<task-tc>createdTime<task-tl>timeLimit
+<task-st>status<task-k>kind<task-p>priority<task;>
+
+
+TAD FUNCTION
+------------
+<f-c>completed<f-w>weight<f-n>name<f-t>tested<fun;>
+
+
+TAD MODULE
+-----------
+<mod-fn>file-name<mod-notes>NOTAS<mod-tasks>TASKS<module;>
+
+con:
+NOTAS=<mod-not>nota1<mod-not>nota2<mod-not>....<mod-not>notaN<mod-not>
+TASKS=<mod-tas>task1<mod-tas>task2<mod-tas>....<mod-tas>taskN<mod-tas>
 
 
 

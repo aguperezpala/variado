@@ -5,13 +5,14 @@
 #include <fstream>
 #include <string>
 #include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
-#include "function.h"
-#include "module.h"
 
 /*! vamos a definir las palabras claves para buscar los pesos y esas cosas */
 #define MODULE_WEIGHT	"MODULE_WEIGHT"
 #define FUNC_COMPLETED	"FUNC_COMPLETED"
+#define FUNC_TESTED	"FUNC_TESTED"
 #define FUNC_WEIGHT	"FUNCTION_WEIGHT"
 #define MODULE_TESTED	"MODULE_TESTED"
 
@@ -35,6 +36,12 @@ using namespace std;
 */
 int parser_search_key(string &data,string &key, string &value);
 
+/*! funcion que parsea un value entre 2 elementos
+* RETURNS:
+*  	< 0	on error
+*  	0	on success
+*/
+int getValue(string &d, int from, const char *beg, const char *end, string &value);
 
 /*! Funcion que extrae una palabra desde una posicion determinada (from) 
 *  saltiandose todos los caracteres pertenecientes a charsTo y luego

@@ -1,4 +1,4 @@
-#include "dirmanager.h"
+#include "dir_mod_aux.h"
 
 
 /* Funcion que se encarga de listar los directorios de un path determinado
@@ -76,12 +76,15 @@ int dirm_list_files(string &dir, vector<string> &files, const char *match)
 *	end	(como debe terminar) | NULL para no verificar esto
 * 	
 */
-void drim_filter(vector<string> &ent, const char *begin, const char *end)
+void dirm_filter(vector<string> &ent, const char *begin, const char *end)
 {
-	string sBegin = "";
-	string sEnd = "";
+	string sBegin = " ";
+	string sEnd = " ";
 	vector<string>::iterator it;
+	vector<string> result;
 	int i = 0;
+	
+	result.clear();
 	
 	if (begin != NULL)
 		sBegin.assign(begin);
@@ -89,8 +92,10 @@ void drim_filter(vector<string> &ent, const char *begin, const char *end)
 	if (end != NULL)
 		sEnd.assign(end);
 	
+	/* FIXME: fijarse que es medio ineficiente esto */
 	for (it = ent.begin(); it != ent.end(); ++it) {
 		i = 0;
+		
 		if (begin != NULL){
 			if(((int)(*it).find(sBegin) == 0))
 				i++;
@@ -104,10 +109,46 @@ void drim_filter(vector<string> &ent, const char *begin, const char *end)
 		} else
 			i++;
 		
-		if ((int) i == 2 ){
-			cout << "borrando " << *it << endl;
-			ent.erase(it);
+		if(i != 2)
+			/* lo agregamos */
+			result.push_back(*it);
+	}
+	ent = result;
+
+}
+
+
+/* Funcion que devuelve llena un vector con todos los directorios partiendo de
+* uno raiz e ingresando recursivamente en todos.
+* NOTE: los directorios van a tener la forma: rpath/xx/xx..
+*/
+void dirm_get_rdirs(vector<string> &dirs, string &rpath)
+{
+	// get the "root" directory's directories
+	vector<string> fileList;
+	string path = "";
+	
+	
+	dirm_list_directories(rpath, fileList, NULL);
+	dirm_filter(fileList, ".", NULL);
+	
+	if (rpath[rpath.size()-1] == '/')
+		rpath.erase(rpath.size()-1,1);
+	
+	for (vector<string>::iterator i=fileList.begin(); i!=fileList.end(); ++i)
+	{
+		// test for . and .. directories (this and back)
+		if (strcmp((*i).c_str(), ".") &&
+			strcmp((*i).c_str(), ".."))
+		{
+			// i use stringstream here, not string = foo; string.append(bar);
+			stringstream fullname;
+			fullname << rpath << "/" << (*i);
+			
+			dirs.push_back(fullname.str());
+			path = fullname.str();
+			dirm_get_rdirs(dirs, path);
 		}
 	}
-
+	
 }

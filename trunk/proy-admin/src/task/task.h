@@ -5,7 +5,7 @@
 #include <string>
 #include <string.h>
 #include <time.h>
-
+#include "parser.h"
 
 using namespace std;
 
@@ -64,12 +64,30 @@ class Task {
 		void setPriority(int p){this->priority= p;};
 		int getPriority(void){return this->priority;};
 		
+		/*! Genera una task desde un string respetando el formato
+		* asignado para guardar las task
+		* RETURNS:
+		* 	< 0	on error
+		*	0	if success
+		*/
+		int fromString(string &str);
+		
+		/*! Convierte una task en un string listo para ser guardada
+		* en un archivo.
+		* RETURNS:
+		*	NULL		if error
+		*	strTask		otherwise
+		* NOTE: Genera memoria
+		*/
+		string *toString(void);
+		
 		~Task(){};
 		
 		/*debug*/
 		void Print(void);
 	
 	private:
+		      
 		string desc;
 		string title;
 		time_t createdTime;

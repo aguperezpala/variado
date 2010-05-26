@@ -1,12 +1,23 @@
 #include "parser_aux.h"
 
+/* convierte a UPPERCASE todo un string */
+static void convert_upper(string &sValue)
+{
+	int i = 0;
+	/* determinamos el valor de value */
+	while (sValue[i])
+	{
+		sValue[i] = toupper(sValue[i]);
+		i++;
+	}
+}
 
 /* Funcion que busca un valor numerico (entero )
  * RETURNS:
  * 	< 0	on error
  *	0	if success
  */
-static int parser_search_int_key(string &data,string &key, int &value)
+int parser_search_int_key(string &data,string &key, int &value)
 {
 	string aux = "";
 	
@@ -27,7 +38,7 @@ static int parser_search_int_key(string &data,string &key, int &value)
  * 	NULL		othereise
  * NOTE: Genera memoria
  */
-static string *parser_read_all_file(const char *fname)
+string *parser_read_all_file(const char *fname)
 {
 	char *buffer;
 	ifstream is;
@@ -74,7 +85,7 @@ static string *parser_read_all_file(const char *fname)
  * 	modName != NULL		if success
  * 	type = (none = 0, 1 = normal_module, 2 = class)
  */
-static string *parse_module_name(string &data, int &type)
+string *parse_module_name(string &data, int &type)
 {
 	string *result = NULL;
 	int pos = 0;
@@ -112,7 +123,7 @@ static string *parse_module_name(string &data, int &type)
 	 * DEBERIAMOS verificar que no este dentro de un comentario ni 
 	 * nada por el estilo...
 	 */
-	result = parse_word(data, pos, PARSER_BLANKS "{:");
+	result = parse_word(data, pos+6, PARSER_BLANKS "{:");
 	type = 2;
 	return result;
 }
@@ -126,7 +137,7 @@ static string *parse_module_name(string &data, int &type)
  * 	NULL			on error
  * NOTE: genera memoria para cada funcion y para la lista
  */
-static list<Function *> *parser_functions(string &data)
+list<Function *> *parser_functions(string &data)
 {
 	list<Function *> *result = NULL;
 	Function *func = NULL;
@@ -134,10 +145,13 @@ static list<Function *> *parser_functions(string &data)
 	string opCmt = PARSER_OPEN_COMMENT, cCmt = PARSER_CLOSE_COMMENT;
 	string funCmp = FUNC_COMPLETED;
 	string funWt = FUNC_WEIGHT;
+	string funTest = FUNC_TESTED;
+	string aux = "";
 	string *funcName = NULL,blanks = PARSER_BLANKS;
 	int pos = 0;
 	uint32_t upos = 0;
 	int completed = 0, weight = 0;
+	bool tested = false;
 	
 	if (data.size() == 0)
 		return result;
@@ -166,6 +180,17 @@ static list<Function *> *parser_functions(string &data)
 			delete comment;
 			continue;
 		}
+		if ((parser_search_key(*comment,funTest, aux) < 0)) {
+			delete comment;
+			continue;
+		}
+		/* verificamos si fue testeada la funcion */
+		convert_upper(aux);
+		if((int)aux.find("TRUE") >= 0)
+			tested = true;
+		else 
+			tested = false;
+		
 		delete comment;
 		/* salteamos los blancos */
 		pos = pos + 1;
@@ -190,6 +215,7 @@ static list<Function *> *parser_functions(string &data)
 			cerr << "no hay memoria para crear la funcion\n";
 			break;
 		}
+		func->setTested(tested);
 		result->push_back(func);
 	}
 		
@@ -198,106 +224,3 @@ static list<Function *> *parser_functions(string &data)
 }
 
 
-
-/*! Funcion que va a tomar un nombre de archivo y lo que va hacer es 
-* devolver un modulo con el nombre, el peso del modulo y sus funciones.
-* NOTE: Fijarse que debe respetarse el formato de los modulos.
-*
-* REQUIRES:
-* 	fname	!= NULL
-* RETURNS:
-* 	errCode
-* NOTE: Genera memoria para cada funcion (si no hay error)
-*/
-int parse_file(string &fname, Module &m)
-{
-	string *fData = NULL;
-	string *modName = NULL;
-	string sAux = "", sValue = "";
-	int iAux = 0;
-	list<Function *>* fList = NULL;
-	list<Function *>::iterator it;
-	
-	
-	fData = parser_read_all_file(fname.c_str());
-	if(fData == NULL) {
-		return -1;
-	}
-	m.setFileName(fname);
-	
-	/* comenzamos a parsear */
-	/* obtenemos el peso */
-	sAux = MODULE_WEIGHT;
-	if (parser_search_int_key(*fData, sAux, iAux) < 0) {
-		delete fData;
-		return -1;
-	}
-	if (iAux >= 0)
-		/*! no tar que el peso es >= 0 */
-		m.setWeight(iAux);
-	else 
-		cerr << "error al obtener el peso del modulo: " << iAux << endl;
-	
-	/* ahora vamos a ver si esta testeado o no */
-	sAux = MODULE_TESTED;
-	if(parser_search_key(*fData, sAux, sValue) < 0) {
-		cerr << "No se pudo determinar si el modulo fue testeado o no\n";
-		m.setTested(false);
-	} else {
-		int i = 0;
-		/* determinamos el valor de value */
-		while (sValue[i])
-		{
-			sValue[i] = toupper(sValue[i]);
-			i++;
-		}
-		cout << "sValue: " << sValue << endl;
-		if((int)sValue.find("TRUE") >= 0)
-			m.setTested(true);
-		else if((int)sValue.find("FALSE") >= 0)
-			m.setTested(false);
-		else
-			cerr << "MODULE_TESTED no respeta el formato \n";
-	}
-	
-	iAux = -1;
-	/* obtenemos el tipo y el nombre del modulo */
-	modName = parse_module_name(*fData, iAux);
-	if (modName != NULL) {
-		/* tenemos un nombre */
-		m.setName(*modName);
-		delete modName;
-		/* seteamos el tipo */
-		if (iAux == 1)
-			m.setType(MODULE_T_MODULE);
-		else if (iAux == 2)
-			m.setType(MODULE_T_CLASS);
-		else {
-			m.setType(MODULE_T_UNKNOWN);
-			cerr << "error al obtener el tipo de modulo: " << iAux;
-			cerr << endl;
-		}
-	} else {
-		/* no tenemos nombre de modulo, seteamos el nombre del archivo */
-		cerr << "no se pudo encontrar nombre del modulo\n";
-		m.setName(fname);
-		m.setType(MODULE_T_UNKNOWN);
-	}
-	
-	/* ahora obtenemos la lista de funciones */
-	fList = parser_functions(*fData);
-	if (fList == NULL) {
-		cerr << "No se pudieron obtener funciones del modulo\n";
-		delete fData;
-		return -2;
-	}
-	/* agregamos las funciones al modulo */
-	for (it = (*fList).begin(); it != (*fList).end(); ++it) {
-		assert(*it != NULL);
-		m.addFunction(*it);
-	}
-	delete fData;
-	delete fList;
-	
-	return 0;
-}
