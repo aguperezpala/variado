@@ -60,12 +60,26 @@ class BTConnManager{
 		 */
 		void insertServer(BTSimpleServer *server);
 		
+		/* Funcion que elimina un server de la lista para que
+		 * deje de ser verificado
+		 * REQUIRES:
+		 * 	server != NULL
+		 */
+		void removeServer(BTSimpleServer *server);
+		
 		/* funcion que permite agregar una conexion para verificar
 		 * sus eventos.
 		 * REQUIRES:
 		 * 	c 	!= NULL
 		 */
 		void insertConnection(BTConnection *c);
+		
+		/* Funcion que elimina una conexion de la lista para que
+		* deje de ser verificada
+		* REQUIRES:
+		* 	conn != NULL
+		*/
+		void removeConnection(BTConnection *con);
 		
 		/* Funcion que devuelve todos los servers a los cuales se estan
 		 * verificando los eventos.
@@ -99,23 +113,23 @@ class BTConnManager{
 		  * NOTE: cuando una conexion no tiene mas datos que enviar
 		  *	  automaticamente se desactiva el POLLOUT.
 		  * NOTE: automaticamente se hace el recv | send.
-		  * REQUIRES:
-		  * 	addr != NULL
+		  * NOTE: Se cierra automaticamente una conexion cuando se 
+		  *	  produce un error, y se devuelve la conexion
 		  * RETURNS:
 		  * 	eType	= type of the event
-		  * 	addr 	= connection involved in the event
+		  * 	conn = connection involved in the event
 		  * 	result	= (operation result, i.e: bytes Send | received)
 		  *
 		  * En caso de error (eType = algun error) en result devolvemos
 		  * el fd que lo produjo.
 		  * NOTE: genera memoria
 		  */
-		 eventType_t getConnEvent(bdaddr_t *addr, int &result);
+		 BTConnection *getConnEvent(eventType_t &ev, int &result);
 		 
 		 /* Destructor.
 		  * NOTE: NO libera ninguna conexion ni nada 
 		  */
-		~BTConnManager(void){};
+		~BTConnManager(void);
 		
 	private:
 		/* 			funciones			*/

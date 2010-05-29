@@ -1,0 +1,115 @@
+********************************************************************************
+BTConnection
+------------
+
+Descripcion: Abstraccion de una conexion
+
+Tareas: Ninguna.
+
+Notas:-
+
+Testeado: Si
+
+********************************************************************************
+BTConnManager
+------------
+
+Descripcion: Manejador de conexiones, usando poll.
+
+Tareas: 
+	* Verificar el tema del poll cuando hay un POLLIN (no lo toma bien..)
+
+Notas:
+
+Testeado:
+	* 50%
+
+
+
+********************************************************************************
+BTDManager
+------------
+
+Descripcion: Encargado de encontrar los dongles del sistema.
+
+Tareas:
+
+Notas:
+	* Tener en cuenta que para que funcione correctamente TODOS los metodos
+	debe ser ejecutado como root.
+
+Testeado: SI.
+
+
+********************************************************************************
+BTDongleDevice
+--------------
+
+Descripcion: Abstraccion de un dongle (bt-usb) del sistema.
+
+Tareas:
+
+Notas:
+
+Testeado: Si.
+
+
+
+
+********************************************************************************
+BTSDPSessionData
+----------------
+
+Descripcion: Abstraccion de una SDP Session
+
+Tareas:
+	* Probablemente se pueda mejorar y no ser tan pedorra.
+
+Notas:
+
+Testeado: Si
+
+
+********************************************************************************
+BTServerManager
+------------
+
+Descripcion: ....
+
+Tareas: 
+	* Revisarlo completo.
+	* Sacar el tema del manejo de los SDP y pasarlo al server.
+
+Notas:
+
+Testeado: NO
+
+
+********************************************************************************
+BTSimpleServer
+------------
+
+Descripcion: Abstraccion de un servidor rfcomm por el momento
+
+Tareas:
+	* Manejar el tema de las sessiones SDP desde esta clase y no desde el
+	BTServerManager.
+
+Notas:
+
+Testeado: Si.
+
+
+
+********************************************************************************
+SimpleThread
+------------
+
+Descripcion:
+
+Tareas:
+
+Notas:
+
+Testeado:
+

@@ -101,7 +101,7 @@ int BTConnection::sendData(void)
 int BTConnection::recvData(void)
 {
 	ssize_t result = 0;
-	char auxBuff[BTC_RCV_AUXBUFF];
+	char auxBuff[BTC_RCV_AUXBUFF] = {0};
 	
 	result = recv(this->sock, auxBuff, BTC_RCV_AUXBUFF, MSG_DONTWAIT);
 	
@@ -118,7 +118,7 @@ int BTConnection::recvData(void)
 		}
 	} else {
 		/* recibimos correctamente datos los guardamos en el buffer */
-		this->rBuff += auxBuff;
+		this->rBuff.append(auxBuff, result);
 	}
 	return result;
 }
