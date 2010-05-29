@@ -267,6 +267,18 @@ void BTConnManager::insertServer(BTSimpleServer *server)
 	addServerFdToSet(server->getSocket(), BTCM_SERVER_POLL_FLAGS);
 }
 
+/* Funcion que elimina un server de la lista para que
+* deje de ser verificado
+* REQUIRES:
+* 	server != NULL
+*/
+void BTConnManager::removeServer(BTSimpleServer *server)
+{
+	assert(server != NULL);
+	removeFdFromSet(server->getSocket());
+	this->serverList.remove(server);
+}
+
 /* funcion que permite agregar una conexion para verificar
 * sus eventos.
 * REQUIRES:
@@ -277,6 +289,19 @@ void BTConnManager::insertConnection(BTConnection *c)
 	assert(c != NULL);
 	this->connList.push_back(c);
 	addConnFdToSet(c->getSocket(), BTCM_POLL_IN_FLAGS | BTCM_POLL_OUT_FLAGS);
+}
+
+/* Funcion que elimina una conexion de la lista para que
+* deje de ser verificada
+* REQUIRES:
+* 	conn != NULL
+*/
+void BTConnManager::removeConnection(BTConnection *con)
+{
+	assert(con != NULL);
+	removeFdFromSet(con->getSocket());
+	this->connList.remove(con);
+	
 }
 
 /* Funcion que permite setear flags (events) de chequeo en una
@@ -311,8 +336,6 @@ void BTConnManager::setFlags(BTConnection *c, short events)
 * NOTE: cuando una conexion no tiene mas datos que enviar
 *	  automaticamente se desactiva el POLLOUT.
 * NOTE: automaticamente se hace el recv | send.
-* REQUIRES:
-* 	addr != NULL
 * RETURNS:
 * 	eType	= see poll
 * 	addr 	= connection involved in the event
@@ -320,7 +343,7 @@ void BTConnManager::setFlags(BTConnection *c, short events)
 *
 * NOTE: genera memoria
 */
-eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
+BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 {
 	int i = 0;
 	int fd = 0, events = 0;
@@ -328,7 +351,6 @@ eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
 	BTConnection *newCon = NULL;
 	
 	
-	assert(addr != NULL);
 	
 	while (!isFinish) {
 		/* primero obtenemos la posicion de la conexion que tiene 
@@ -336,11 +358,21 @@ eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
 		i = getIndexFdWithEvents();
 		if (i < 0){
 			/* nos dio error. devolvemos error */
-			return BTCM_EV_ERR;
+			ev = BTCM_EV_ERR;
+			return NULL;
 		}
 		fd = this->fdSet[i].fd;
 		events = this->fdSet[i].revents;
 		this->fdSet[i].revents = 0;
+		/*cout << "index: " << i << "\t events: " << events << endl;
+		cout << "POLLOUT: " << POLLOUT << endl;
+		cout << "POLLIN: " << POLLIN << endl;
+		cout << "POLLPRI: " << POLLPRI << endl;
+		cout << "POLLNVAL: " << POLLNVAL << endl;
+		cout << "POLLRDHUP: " << POLLRDHUP << endl;
+		cout << "POLLERR: " << POLLERR << endl;
+		cout << "POLLHUP: " << POLLHUP << endl;
+		*/
 		/* tenemos el i-esimo fd con eventos... */
 		if (i < this->connPtr) {
 			/* es un server... */
@@ -351,20 +383,22 @@ eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
 				assert(ss != NULL);
 				newCon = ss->acceptConn(&result);
 				result = fd;
-				if (newCon == NULL)
+				if (newCon == NULL){
 					/*!### ERROR al aceptar una conexion */
-					return BTCM_EV_ACCEPT_ERR;
+					ev = BTCM_EV_ACCEPT_ERR;
+					return NULL;
+				}
 				/* si la aceptamos la agregamos a la lista y agregamos
 				* su fd */
 				insertConnection(newCon);
-				/* copiamos su mac */
-				bacpy(addr, newCon->getMacDest());
-				return BTCM_EV_NEW_CONN;
+				ev = BTCM_EV_NEW_CONN;
+				return newCon;
 			} else {
 				/* estamos recibiendo un error de un server */
 				debugp("Un server genero un evento inesperado\n");
 				result = fd;
-				return BTCM_EV_SERVER_ERR;
+				ev = BTCM_EV_SERVER_ERR;
+				return NULL;
 			}
 			
 		} else {
@@ -372,16 +406,15 @@ eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
 			
 			result = fd;
 			assert(con != NULL);
-			bacpy(addr, con->getMacDest());
 			/* es una conexion... hay 3 casos, recepcion, envio,
 			 * error. */
 			if (events & (BTCM_POLL_IN_FLAGS)) {
 				/* tenemos datos para leer */
 				result = con->recvData();
 				this->fdSet[i].revents = events ^ (BTCM_POLL_IN_FLAGS);
-				return BTCM_EV_RCV;
-			}
-			if (events & (BTCM_POLL_OUT_FLAGS)) {
+				ev = BTCM_EV_RCV;
+				return con;
+			} else if (events & (BTCM_POLL_OUT_FLAGS)) {
 				/* Debemos verificar si la conexion realmente
 				 * tiene datos para mandar o solo hay que
 				 * desactivar el flag */
@@ -394,18 +427,30 @@ eventType_t BTConnManager::getConnEvent(bdaddr_t *addr, int &result)
 				/* si estamos aca es porque realmente debemos
 				 * enviar datos */
 				result = con->sendData();
-				return BTCM_EV_OUT;
-			}
+				
+				ev = BTCM_EV_OUT;
+				return con;
+			} else{
 			
-			/*! si estamos aca es porque hubo un error, ya sea
-			 * porque nos cerraron la conexion o lo que sea */
-			con->closeConnection();
-			return BTCM_EV_CLOSE_CONN;
+				/*! si estamos aca es porque hubo un error, ya sea
+				* porque nos cerraron la conexion o lo que sea */
+				con->recvData();
+				con->closeConnection();
+				ev = BTCM_EV_CLOSE_CONN;
+				return con;
+			}
 		}
 	}
 	
-	return BTCM_EV_ERR;
+	ev = BTCM_EV_ERR;
+	return NULL;
 }
 
 
+BTConnManager::~BTConnManager(void)
+{
+	if (this->fdSet != NULL)
+		free(this->fdSet);
+	
+}
 

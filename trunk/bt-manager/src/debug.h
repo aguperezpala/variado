@@ -14,6 +14,7 @@
 		printf("%s:" x "\t%d\n", __FUNCTION__,__LINE__)
 	#define ASSERT(x)	assert(x)
 #else
+	#define printErr(x)	
 	#define debugp(x)	
 	#define ASSERT(x)	
 #endif
