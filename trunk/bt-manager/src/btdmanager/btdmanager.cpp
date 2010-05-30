@@ -148,6 +148,27 @@ list<BTDongleDevice *> * BTDManager::getListDevices(int flag)
 	return result;
 }
 
+/* Funcion que devuelve un Dongle desde una mac determinada
+* REQUIRES:
+* 	mac != NULL
+* RETURNS:
+* 	NULL	si no existe dongle con tal mac
+* 	dongle	caso contrario.
+*/
+BTDongleDevice *BTDManager::getDongleFromMac(bdaddr_t *mac)
+{
+	BTDongleDevice *result = NULL;
+	list<BTDongleDevice*>::iterator it;
+	
+	assert(mac != NULL);
+	
+	for (it = this->devicesList.begin(); it != this->devicesList.end(); ++it){
+		if(bacmp((*it)->getMac(), mac) == 0)
+			return (*it);
+	}
+	
+	return NULL;
+}
 
 /* Destructor (elimina todos los BTDongleDevice's creados) */
 BTDManager::~BTDManager(void)

@@ -66,6 +66,7 @@ class BTConnManager{
 		 * 	server != NULL
 		 */
 		void removeServer(BTSimpleServer *server);
+		void removeServer(int fd);
 		
 		/* funcion que permite agregar una conexion para verificar
 		 * sus eventos.
@@ -80,6 +81,7 @@ class BTConnManager{
 		* 	conn != NULL
 		*/
 		void removeConnection(BTConnection *con);
+		void removeConnection(int fd);
 		
 		/* Funcion que devuelve todos los servers a los cuales se estan
 		 * verificando los eventos.
@@ -97,6 +99,20 @@ class BTConnManager{
 		 const list<BTConnection *>& getConList(void)
 		 {return this->connList;};
 		 
+		 /* funcion que devuelve una conexion desde un fd
+		 * RETURNS:
+		 * 	NULL 	on error || if not exists
+		 * 	BTConnection != NULL	on success
+		 */
+		 BTConnection *getConFromFd(int fd);
+		 
+		 /* funcion que devuelve un server desde un fd
+		 * RETURNS:
+		 * 	NULL 	on error || if not exists
+		 * 	BTSimpleServer != NULL	on success
+		 */
+		 BTSimpleServer *getServerFromFd(int fd);
+		 
 		 /* Funcion que permite setear flags (events) de chequeo en una
 		  * conexion determinada. (cuando se quiera enviar datos por ej
 		  * debemos setearle el flag POLLOUT a la conexion..
@@ -111,7 +127,9 @@ class BTConnManager{
 		  * involucrada, y que tipo de evento sucedio. 
 		  * ES BLOQUEANTE! hasta que sucede un evento
 		  * NOTE: cuando una conexion no tiene mas datos que enviar
-		  *	  automaticamente se desactiva el POLLOUT.
+		  *	  automaticamente se desactiva el POLLOUT, y cuando
+		  *	  tiene datos para enviar automaticamente se setea
+		  *	  el flag POLLOUT.
 		  * NOTE: automaticamente se hace el recv | send.
 		  * NOTE: Se cierra automaticamente una conexion cuando se 
 		  *	  produce un error, y se devuelve la conexion
@@ -165,20 +183,6 @@ class BTConnManager{
 		*	false	on error
 		*/
 		bool removeFdFromSet(int fd);
-		
-		/* funcion que devuelve una conexion desde un fd
-		* RETURNS:
-		* 	NULL 	on error || if not exists
-		* 	BTConnection != NULL	on success
-		*/
-		BTConnection *getConFromFd(int fd);
-		
-		/* funcion que devuelve un server desde un fd
-		* RETURNS:
-		* 	NULL 	on error || if not exists
-		* 	BTSimpleServer != NULL	on success
-		*/
-		BTSimpleServer *getServerFromFd(int fd);
 		
 		/* Funcion que devuelve el indice correspondiente en el fdSet
 		 * segun un socket determinado.
