@@ -278,6 +278,10 @@ void BTConnManager::removeServer(BTSimpleServer *server)
 	removeFdFromSet(server->getSocket());
 	this->serverList.remove(server);
 }
+void BTConnManager::removeServer(int fd)
+{
+	removeServer(getServerFromFd(fd));
+}
 
 /* funcion que permite agregar una conexion para verificar
 * sus eventos.
@@ -302,6 +306,10 @@ void BTConnManager::removeConnection(BTConnection *con)
 	removeFdFromSet(con->getSocket());
 	this->connList.remove(con);
 	
+}
+void BTConnManager::removeConnection(int fd)
+{
+	removeConnection(getConFromFd(fd));
 }
 
 /* Funcion que permite setear flags (events) de chequeo en una
@@ -408,6 +416,16 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 			assert(con != NULL);
 			/* es una conexion... hay 3 casos, recepcion, envio,
 			 * error. */
+			/* verificamos si tiene o no datos para mandar */
+			if (con->getSendBuff().size() == 0) {
+				/*! no tiene nada para mandar */
+				events = events ^ (BTCM_POLL_OUT_FLAGS);
+				this->fdSet[i].events = events;
+			} else {
+				/*! si tiene para mandar */
+				events = (events | (BTCM_POLL_OUT_FLAGS));
+				this->fdSet[i].events = events;
+			}
 			if (events & (BTCM_POLL_IN_FLAGS)) {
 				/* tenemos datos para leer */
 				result = con->recvData();
@@ -415,19 +433,9 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 				ev = BTCM_EV_RCV;
 				return con;
 			} else if (events & (BTCM_POLL_OUT_FLAGS)) {
-				/* Debemos verificar si la conexion realmente
-				 * tiene datos para mandar o solo hay que
-				 * desactivar el flag */
-				if (con->getSendBuff().size() == 0) {
-					/* no tenemos datos => sacamos el flag */
-					this->fdSet[i].events = events ^ POLLOUT;
-					/* buscamos proximo evento reportable */
-					continue;
-				}
 				/* si estamos aca es porque realmente debemos
 				 * enviar datos */
 				result = con->sendData();
-				
 				ev = BTCM_EV_OUT;
 				return con;
 			} else{

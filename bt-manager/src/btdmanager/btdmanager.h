@@ -15,6 +15,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <stdlib.h>
+#include <assert.h>
 /* libs propias */
 #include "debug.h"
 #include "consts.h"
@@ -50,6 +51,15 @@ class BTDManager {
 		 * 	 encarga de hacerlo pero SI eliminar la lista.
 		 */
 		list<BTDongleDevice *> * getListDevices(int flag);
+		
+		/* Funcion que devuelve un Dongle desde una mac determinada
+		 * REQUIRES:
+		 * 	mac != NULL
+		 * RETURNS:
+		 * 	NULL	si no existe dongle con tal mac
+		 * 	dongle	caso contrario.
+		 */
+		BTDongleDevice *getDongleFromMac(bdaddr_t *mac);
 		
 		/* Destructor (elimina todos los BTDongleDevice's creados) */
 		~BTDManager(void);
