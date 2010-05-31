@@ -59,7 +59,7 @@ class BTDManager {
 		 * 	NULL	si no existe dongle con tal mac
 		 * 	dongle	caso contrario.
 		 */
-		BTDongleDevice *getDongleFromMac(bdaddr_t *mac);
+		BTDongleDevice *getDongleFromMac(const bdaddr_t *mac);
 		
 		/* Destructor (elimina todos los BTDongleDevice's creados) */
 		~BTDManager(void);

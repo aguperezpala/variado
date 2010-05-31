@@ -65,7 +65,7 @@ MY_LIBS   = -lbluetooth -lpthread
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -Wall -ansi -I. -I.. -Ibtdongledevice -Ibtconnection \
 -Ibtdmanager -Ibtsdpsessiondata -Ibtservermanager -Ibtsimpleserver \
--Isimplethread
+-Isimplethread -Ibtconnmanager
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   =
@@ -73,7 +73,7 @@ LDFLAGS   =
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.
 SRCDIRS   = . btdongledevice btconnection \
-btdmanager btsdpsessiondata btservermanager btsimpleserver \
+btdmanager btsdpsessiondata btservermanager btsimpleserver btconnmanager \
 simplethread
 
 # The executable file name.
@@ -219,6 +219,7 @@ createlib:$(OBJS) $(HEADERS)
 	ar rcs libbt-manager.a $(OBJS)
 	cp libbt-manager.a /usr/lib
 	cp $(HEADERS) /usr/include/bt-manager
+	ldconfig
 
 # Rules for generating the tags.
 #-------------------------------------

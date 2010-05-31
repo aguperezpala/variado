@@ -417,12 +417,8 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 			/* es una conexion... hay 3 casos, recepcion, envio,
 			 * error. */
 			/* verificamos si tiene o no datos para mandar */
-			if (con->getSendBuff().size() == 0) {
-				/*! no tiene nada para mandar */
-				events = events ^ (BTCM_POLL_OUT_FLAGS);
-				this->fdSet[i].events = events;
-			} else {
-				/*! si tiene para mandar */
+			
+			if (con->getSendBuff().size() != 0) {
 				events = (events | (BTCM_POLL_OUT_FLAGS));
 				this->fdSet[i].events = events;
 			}
@@ -436,6 +432,12 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 				/* si estamos aca es porque realmente debemos
 				 * enviar datos */
 				result = con->sendData();
+				/* vemos si le quedaron datos */
+				if (con->getSendBuff().size() == 0) {
+					this->fdSet[i].revents = events ^ 
+						(BTCM_POLL_OUT_FLAGS);
+					continue;
+				}
 				ev = BTCM_EV_OUT;
 				return con;
 			} else{
