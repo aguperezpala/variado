@@ -155,9 +155,8 @@ list<BTDongleDevice *> * BTDManager::getListDevices(int flag)
 * 	NULL	si no existe dongle con tal mac
 * 	dongle	caso contrario.
 */
-BTDongleDevice *BTDManager::getDongleFromMac(bdaddr_t *mac)
+BTDongleDevice *BTDManager::getDongleFromMac(const bdaddr_t *mac)
 {
-	BTDongleDevice *result = NULL;
 	list<BTDongleDevice*>::iterator it;
 	
 	assert(mac != NULL);
