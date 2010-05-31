@@ -182,10 +182,10 @@ int main (void)
 				cout << "nueva conexion recibida: " << strCon << endl;
 				
 				/* mandamos la lista de servers */ 
-				sData = "resp:18:00:1A:7D:01:54:6A,";
+				/*sData = "resp:18:00:1A:7D:01:54:6A,";
 				//con->sendData(sData);
 				con->getSendBuff() += sData;
-				btcm.setFlags(con,BTCM_POLL_OUT_FLAGS);
+				btcm.setFlags(con,BTCM_POLL_OUT_FLAGS);*/
 				break;
 				
 			case BTCM_EV_OUT:
@@ -212,15 +212,21 @@ int main (void)
 			case BTCM_EV_RCV:
 				cout << "eventType: BTCM_EV_RCV\n";
 				assert(con != NULL);
-				cout << "Recibimos de: " << strCon << "\ndatos: ";
+				cout << "Recibimos de: " << strCon << "\ndatos: "
+				<< con->getRcvBuff() << endl;
 				if((int)con->getRcvBuff().find("fail") >= 0){
 					fail = true;
 					con->closeConnection();
 					btcm.removeConnection(con);
 					delete con;
+				} else if (con->getRcvBuff().find("list") >= 0) {
+					sData = "resp:18:00:1A:7D:01:54:6A,";
+					con->getSendBuff() += sData;
+					con->clearRecvBuffer();
+					btcm.setFlags(con,BTCM_POLL_OUT_FLAGS);
 				}
-				cout << con->getRcvBuff() << endl;
-				con->clearRecvBuffer();
+				/*cout << con->getRcvBuff() << endl;
+				con->clearRecvBuffer();*/
 				break;
 				
 			case BTCM_EV_SERVER_ERR:
