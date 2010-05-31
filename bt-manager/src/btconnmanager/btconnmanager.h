@@ -25,7 +25,7 @@
 using namespace::std;
 
 /*! definimos las banderas para las conexiones / servers que se insertan */
-#define BTCM_POLL_IN_FLAGS		POLLIN | POLLPRI | POLLNVAL
+#define BTCM_POLL_IN_FLAGS		POLLIN | POLLPRI
 #define BTCM_POLL_OUT_FLAGS		POLLOUT
 
 

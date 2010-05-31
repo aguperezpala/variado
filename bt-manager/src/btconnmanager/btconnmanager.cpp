@@ -419,13 +419,11 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 			/* verificamos si tiene o no datos para mandar */
 			
 			if (con->getSendBuff().size() != 0) {
-				events = (events | (BTCM_POLL_OUT_FLAGS));
-				this->fdSet[i].events = events;
+				this->fdSet[i].events |= (BTCM_POLL_OUT_FLAGS);
 			}
 			if (events & (BTCM_POLL_IN_FLAGS)) {
 				/* tenemos datos para leer */
 				result = con->recvData();
-				this->fdSet[i].revents = events ^ (BTCM_POLL_IN_FLAGS);
 				ev = BTCM_EV_RCV;
 				return con;
 			} else if (events & (BTCM_POLL_OUT_FLAGS)) {
@@ -434,8 +432,7 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 				result = con->sendData();
 				/* vemos si le quedaron datos */
 				if (con->getSendBuff().size() == 0) {
-					this->fdSet[i].revents = events ^ 
-						(BTCM_POLL_OUT_FLAGS);
+					this->fdSet[i].events ^= (BTCM_POLL_OUT_FLAGS);
 					continue;
 				}
 				ev = BTCM_EV_OUT;
