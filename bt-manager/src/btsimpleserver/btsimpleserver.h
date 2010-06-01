@@ -75,6 +75,17 @@ class BTSimpleServer {
 		 */
 		~BTSimpleServer(void);
 		
+		#ifdef __DEBUG
+		/*! esto es para poder crear servers desde un socket determinado
+		 * por lo que se debera hacer el bind, y el listen de otro lado
+		 * solo va a funcionar el acceptConn()...
+		 * REQIURES:
+		 * 	fd >= 0
+		 * 	fd (bindeado & en escucha (listen))
+		 */
+		BTSimpleServer(int fd);
+		#endif
+		
 	private:
 		/* atributos */
 		
