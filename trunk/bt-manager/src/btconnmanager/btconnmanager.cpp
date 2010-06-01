@@ -413,7 +413,10 @@ BTConnection *BTConnManager::getConnEvent(eventType_t &ev, int &result)
 			BTConnection *con = getConFromFd(fd);
 			
 			result = fd;
-			assert(con != NULL);
+			if (con == NULL) {
+				debugp("Recibimos con NULL\n");
+				continue;
+			}
 			/* es una conexion... hay 3 casos, recepcion, envio,
 			 * error. */
 			/* verificamos si tiene o no datos para mandar */

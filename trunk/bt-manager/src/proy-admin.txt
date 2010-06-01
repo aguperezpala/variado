@@ -18,6 +18,7 @@ Descripcion: Manejador de conexiones, usando poll.
 
 Tareas: 
 	* Verificar el tema del poll cuando hay un POLLIN (no lo toma bien..)
+	
 
 Notas:
 
