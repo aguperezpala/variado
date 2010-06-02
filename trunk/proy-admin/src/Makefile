@@ -64,14 +64,14 @@ MY_LIBS   = -lbluetooth
 
 # The pre-processor options used by the cpp (man cpp for more).
 CPPFLAGS  = -Wall -ansi -pedantic -Werror -I. -Inote -Ifunction -Itask -Imodule \
--Iparser  -Iproject -Ifilemanager
+-Iparser  -Iproject -Ifilemanager -Isearcher
 
 # The options used in linking as well as in any direct use of ld.
 LDFLAGS   = 
 
 # The directories in which source files reside.
 # If not specified, only the current directory will be serached.
-SRCDIRS   = . note function task module parser project filemanager
+SRCDIRS   = . note function task module parser project filemanager searcher
 
 # The executable file name.
 # If not specified, current directory name or `a.out' will be used.

@@ -314,6 +314,23 @@ void Module::addNote(Note *note)
 	this->noteList.push_back(note);
 }
 
+/* Funcion que determina si ya existe una Nota en el 
+* modulo. */
+bool Module::existNote(Note *n)
+{
+	list<Note *>::iterator nit;
+	
+	if(n == NULL)
+		return false;
+	
+	for(nit = this->noteList.begin(); nit != this->noteList.end(); ++nit) {
+		assert(*nit != NULL);
+		if(*(*nit) == *n)
+			return true;
+	}
+	return false;
+}
+
 /* Funcion que permite agregar una tarea relacionada al modulo
 * REQUIRES:
 * 	t 	!= NULL
@@ -323,6 +340,23 @@ void Module::addTask(Task *t)
 {
 	assert(t != NULL);
 	this->taskList.push_back(t);
+}
+
+/* Funcion que determina si ya existe una tarea en el 
+* modulo. */
+bool Module::existTask(Task *t)
+{
+	list<Task *>::iterator tit;
+	
+	if(t == NULL)
+		return false;
+	
+	for(tit = this->taskList.begin(); tit != this->taskList.end(); ++tit) {
+		assert(*tit != NULL);
+		if (*(*tit) == *t)
+			return true;
+	}
+	return false;
 }
 
 /*! Funcion que devuelve el porcentaje de completado del modulo

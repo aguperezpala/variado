@@ -104,7 +104,12 @@ El archivo de configuracion debe estar hecho de la siguiente forma
 
 X = Y;
 
-X representa la cadena a buscar en los archivos source y no puede tener '\n'.
+X representa la cadena a buscar en los archivos source y no puede tener '\n' en
+el archivo de configuracion del searcher.
+En los archivos source/headers, vamos a tener algo de la forma:
+X <data>; con <data> son los datos/descripciones que queremos poner (ej:
+NOTE: esto es \n una nota;), debe terminar con ';'
+
 Y representa la accion a realizar una vez encontrada la cadena X.
 Y puede tener las siguientes formas
 SEARCHER_TASK_K_BUGFIX,		/* es una tarea para reparar un bug */

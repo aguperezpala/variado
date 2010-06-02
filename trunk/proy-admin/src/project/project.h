@@ -17,7 +17,7 @@ class Project {
 	
 	public:
 		/* constructor */
-		Project(){};
+		Project();
 		
 		/* set/get project dir */
 		void setDir(string &d){this->projDir = d;};
