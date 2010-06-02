@@ -1,0 +1,37 @@
+FUNCIONALIDADES
+---------------
+
+* Dado un directorio, poder armar un proyecto en base a los archivos que se
+  encuentran en el directorio respetando ya el formato.
+
+* Poder agregar/quitar directorios que pertenecen al proyecto.
+	- Poder agregar recursivamente directorios.
+	- Poder quitar recursivamente directorios.
+
+* Poder importar (transformar) un proyecto (cada modulo) que no respete el
+  formato a uno que si lo haga (va hacer falta poder reconocer las funciones
+  independientemente de los comentarios..)
+	 
+* Tener una seccion donde se puedan agregar los requerimientos del sistema
+  (el analisis de requerimientos).
+  
+* Un manejador de archivos del proyecto y puedan organizarse en distintas
+  carpetas.
+  
+
+
+
+
+
+
+
+FALTA HACER
+------------
+
+* Interfaz grafica, un widget para cada clase:
+	- Note
+	- Function
+	- Task
+	- Module
+	- Project
+	- (Requirement)

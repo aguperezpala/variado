@@ -160,8 +160,10 @@ int Project::parseModulesFromList(string &result)
 		/*! aca tenemos que crear el archivo con nombre modName,
 		 * e insertarle (*it)->toString(). */
 		modData = (*it)->toString();
-		if (modData == NULL)
+		if (modData == NULL) {
+			cerr << "parseModulesFromList: modData NULL\n";
 			return -1;
+		}
 		
 		path = this->projDir;
 		if (path[path.size()-1] != '/')
@@ -169,6 +171,7 @@ int Project::parseModulesFromList(string &result)
 		
 		path.append(modName);
 		if (filea_create_w(path, *modData) < 0){
+			cerr << "parseModulesFromList: filea_create_w < 0: " << path << "\n";
 			delete modData;
 			return -1;
 		}
@@ -233,6 +236,10 @@ int Project::parseModulesToList(string &result)
 /*!	###		FUNCIONES PUBLICAS		### 	*/
 
 
+Project::Project()
+{
+	this->projDir = ".";
+}
 
 /* funcion que agrega un modulo al proyecto
 * REQUIRES:
@@ -382,6 +389,7 @@ string *Project::toString(void)
 	result->append(buff, sizeof(this->canCompile));	
 	result->append("<proj-mods>");
 	if (parseModulesFromList(aux) < 0) {
+		cerr << "Error en parseModulesFromList\n";
 		delete result;
 		return NULL;
 	}
@@ -389,12 +397,14 @@ string *Project::toString(void)
 	aux.clear();
 	result->append("<proj-notes>");
 	if (parseNoteFromList(aux) < 0) {
+		cerr << "Error en parseNoteFromList\n";
 		delete result;
 		return NULL;
 	}
 	result->append(aux);	
 	result->append("<proj-tasks>");
 	if (parseTasksFromList(aux) < 0) {
+		cerr << "Error en parseTasksFromList\n";
 		delete result;
 		return NULL;
 	}

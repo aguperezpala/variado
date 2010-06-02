@@ -76,6 +76,10 @@ class Module {
 		 */
 		void addNote(Note *note);
 		
+		/* Funcion que determina si ya existe una Nota en el 
+		* modulo. */
+		bool existNote(Note *t);
+		
 		/* Funcion que devuelve la lista de tareas */
 		list<Task *> &getTasks(void){return this->taskList;};
 		
@@ -85,6 +89,10 @@ class Module {
 		* NOTE: No debe ser liberada la tarea una vez agregada 
 		*/
 		void addTask(Task *t);
+		
+		/* Funcion que determina si ya existe una tarea en el 
+		 * modulo. */
+		bool existTask(Task *t);
 		
 		/*! Funcion que devuelve el porcentaje de completado del modulo
 		 * teniendo en cuenta los porcentajes de las funciones que

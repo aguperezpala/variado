@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include <iostream>
+#include <list>
 #include <fstream>
 #include <string>
 #include <stdio.h>
@@ -72,6 +73,22 @@ string *parse_word(string &data, uint32_t from, const char *charsTo);
 * 	from		devuelve la posicion donde termina el comentario
 */
 string *parser_get_comment(string &data, int &from, 
+			    string &openComment, string &closeComment);
+
+
+/*! Funcion que parsea un todos los comentarios que encuentra comenzando
+* desde from y terminando en to, los guarda en una lista y los devuelve 
+* NOTE: devuelve el comentario sin los caracteres de comentarios
+* REQUIRES:
+* 	from 	<= to
+* 	to	<= data.size()
+* 	openComment != NULL
+* 	closeComment != NULL
+* RETURNS:
+* 	NULL		if cant find or error
+* 	comment		otherwise
+*/
+list<string> *parser_get_comments(string &data, int from, int to,
 			    string &openComment, string &closeComment);
 
 

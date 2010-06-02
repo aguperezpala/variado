@@ -173,6 +173,59 @@ string *parser_get_comment(string &data, int &from,
 }
 
 
+/*! Funcion que parsea un todos los comentarios que encuentra comenzando
+* desde from y terminando en to, los guarda en una lista y los devuelve 
+* NOTE: devuelve el comentario sin los caracteres de comentarios
+* REQUIRES:
+* 	from 	<= to
+* 	to	<= data.size()
+* 	openComment != NULL
+* 	closeComment != NULL
+* RETURNS:
+* 	NULL		if cant find or error
+* 	comment		otherwise
+*/
+list<string> *parser_get_comments(string &data, int from, int to,
+				  string &openComment, string &closeComment)
+{
+	list<string> *result = NULL;
+	int pos = 0, endPos = 0;
+	string aux = "";
+	int size = (int) data.size();
+	
+	
+	if (from > to || to > size){
+		return result;
+	}
+	
+	result = new list<string>();
+	if(result == false)
+		return result;
+	
+	while (from <= to) {
+		/* buscamos la posicion donde comienza el comentario */
+		pos = data.find(openComment, from);
+		
+		if (pos < 0)
+			break;
+		
+		endPos = data.find(closeComment, pos + 1);
+		if (endPos < 0)
+			break;
+		pos = pos + (int)openComment.size();
+		from = endPos + closeComment.size();
+		aux = data.substr(pos, endPos-pos + (int)closeComment.size());
+		result->push_back(aux);
+	}
+	
+	if((int) result->size() == 0){
+		delete result;
+		result = NULL;
+	}
+	
+	return result;
+}
+
 /*! funcion que saltea los caracteres cs y devuelve la posicion luego de saltear
 * los caracteres especificados
 * REQUIRES:
@@ -191,7 +244,7 @@ int parser_jump_chars(string &d, int from, const char* cs)
 	aux = cs;
 	
 	while (from < size)
-		if((int)aux.find(data[from]) >= 0)
+		if((int)aux.find(d[from]) >= 0)
 			from++;
 		else
 			break;
