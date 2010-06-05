@@ -1,6 +1,45 @@
 #include "task.h"
 
 
+void Task::getStringStatus(string &s)
+{
+	if (this->status == TASK_S_DONE)
+		s = "DONE";
+	else if (this->status == TASK_S_CHECKED)
+		s = "CHECKED";
+	else
+		s = "UNKNOWN";
+	
+}
+void Task::getStringType(string &type)
+{
+	if(this->kind == TASK_K_BUGFIX)
+		type = "BUGFIX";
+	else if(this->kind == TASK_K_REVISION)
+		type = "REVISION";
+	else if(this->kind == TASK_K_TODO)
+		type = "TODO";
+	else if(this->kind == TASK_k_IMPROVE)
+		type = "IMPROVE";
+	else if(this->kind == TASK_K_NORMAL)
+		type = "NORMAL";
+	else
+		type = "UNKNOWN";
+	
+}
+void Task::getStringPriority(string &p)
+{
+	if(this->priority == TASK_P_LOW)
+		p = "LOW";
+	else if(this->priority == TASK_P_MEDIUM)
+		p = "MEDIUM";
+	else if(this->priority == TASK_P_HIGH)
+		p = "HIGH";
+	else
+		p = "UNKNOWN";
+}
+
+
 /* setea/obtiene el tiempo de creacion */
 void Task::setCreatedTime(time_t &ct)
 {

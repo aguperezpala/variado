@@ -174,4 +174,27 @@ list<Function *> *parser_functions(string &data)
 	
 }
 
-
+/* Funcion que cuenta la cantidad de ocurrencias de un string que hay en un rango
+* determinado de posiciones [from, to].
+* RETURNS:
+* 	number of ocurrences of string str
+*/
+int parser_count_num_ocurr(string &data, int from, int to, string &str)
+{
+	int result = 0;
+	
+	if (to > (int) data.size())
+		return -1;
+	
+	while (from < to) {
+		from = (int) data.find(str, from); 
+		cout << "from: " << from << endl;
+		if (from <= 0 || from > to)
+			break;
+		result++;
+		from++;
+	}
+	
+	return result;
+	
+}

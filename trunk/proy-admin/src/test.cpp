@@ -34,18 +34,22 @@ int main(void)
 	searcher.setProject(&pro);
 	searcher.loadConfig(fname);
 	
-	pro.Print();
+	//pro.Print();
 	/* agregamos ahora las notas e imprimirmos */
 	cout << "\n\n AGREGANDO LAS NOTAS: \n\n";
 	cout << "searcher.searchForNotes() " << searcher.searchForNotes() << endl;
-	pro.Print();
+	//pro.Print();
 	cout << "\n\n AGREGANDO LAS TAREAS: \n\n";
 	cout << " searcher.searchForNotes() " << searcher.searchForTasks() << endl;
-	pro.Print();
+	//pro.Print();
 	
 	fname = ".project";
 	pro.setDir(fname);
 	str = pro.toString();
+	fname = "\n";
+	desc = "a\nb\n3c\n4d\n5e\n6f\n7g\n8h\n9i\n10j\n11\n12\n13\n14\n15\n16\n17\n18\n19\n";
+	cout << "cantidad de lineas del modulo: " << 
+		parser_count_num_ocurr(desc, 0, desc.size(), fname) << endl;
 	if (str == NULL)
 		cout << "error al convertir el proj en string\n";
 	else {

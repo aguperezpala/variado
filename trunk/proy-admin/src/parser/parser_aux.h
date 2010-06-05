@@ -43,6 +43,13 @@ string *parse_module_name(string &data, int &type);
 */
 list<Function *> *parser_functions(string &data);
 
+/* Funcion que cuenta la cantidad de ocurrencias de un string que hay en un rango
+ * determinado de posiciones [from, to].
+ * RETURNS:
+ * 	number of ocurrences of string str
+ */
+int parser_count_num_ocurr(string &data, int from, int to, string &str);
+
 
 
 
