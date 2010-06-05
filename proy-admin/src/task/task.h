@@ -55,14 +55,17 @@ class Task {
 		/* setea/obtiene el estado */
 		void setStatus(int s){this->status = s;};
 		int getStatus(void){return this->status;};
+		void getStringStatus(string &s);
 		
 		/* setea/obtiene el tipo */
 		void setKind(int k){this->kind= k;};
 		int getKind(void){return this->kind;};
+		void getStringType(string &type);
 		
 		/* setea/obtiene la prioridad */
 		void setPriority(int p){this->priority= p;};
 		int getPriority(void){return this->priority;};
+		void getStringPriority(string &p);
 		
 		/*! Genera una task desde un string respetando el formato
 		* asignado para guardar las task

@@ -29,9 +29,13 @@ FALTA HACER
 ------------
 
 * Interfaz grafica, un widget para cada clase:
-	- Note
-	- Function
-	- Task
-	- Module
-	- Project
-	- (Requirement)
+	- Project (cambiar nombres de archivos, tienen task)
+	- (Requirement) 
+* Para module_gui:
+	*  Poder agregar notas desde esa ventana.
+	*  Poder agregar tareas desde esa ventana.
+	*  Poder borrar / modificar notas y tareas del modulo.
+
+* Poder modificar el nombre del modulo, funciones? % completado, pesos, etc
+  desde las ventanas (osea deberiamos poder modificar ciertas lineas especificas
+  de determinados archivos. o lo dejamos asi nomas?)

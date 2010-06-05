@@ -41,8 +41,8 @@ class Module {
 		string &getName(void){return this->name;};
 		
 		/* set/get canCompile */
-		void setCanComiple(bool c){this->canCompile = c;};
-		bool getCanComiple(void){return this->canCompile;};
+		void setCanCompile(bool c){this->canCompile = c;};
+		bool getCanCompile(void){return this->canCompile;};
 		
 		/* set/get tested*/
 		void setTested(bool t){this->tested = t;};
@@ -55,6 +55,7 @@ class Module {
 		/* set/get type*/
 		void setType(int t){this->type= t;};
 		int getType(void){return this->type;};
+		void getStringType(string &t);
 		
 		/* Funcion que devuelve la lista de funciones del modulo */
 		list<Function *> &getFunctions(void){return this->funcList;};

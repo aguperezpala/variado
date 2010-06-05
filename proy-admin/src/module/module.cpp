@@ -292,6 +292,23 @@ Module::Module(string &n, int w, string& fn)
 }
 
 
+void Module::getStringType(string &t)
+{
+	switch(this->type) {
+		case MODULE_T_CLASS:
+			t = "Class type";
+			break;
+			
+		case MODULE_T_MODULE:
+			t = "Normal Module type";
+			break;
+			
+		default:
+			t = "unknown type";
+			break;
+	}
+}
+
 /* funcion que agrega una funcion al modulo 
 * REQUIRES:
 * 	func	!= NULL
