@@ -67,6 +67,13 @@ class Module {
 		 */
 		void addFunction(Function *func);
 		
+		/* funcion que libera una function de la lista liberando tambien
+		* la memoria.
+		* REQUIRES:
+		* 	func != NULL
+		*/
+		void removeFunction(Function *func);
+		
 		/* Funcion que devuelve la lista de notas */
 		list<Note *> &getNotes(void){return this->noteList;};
 		
@@ -76,6 +83,13 @@ class Module {
 		 * NOTE: No debe ser liberada la nota una vez agregada 
 		 */
 		void addNote(Note *note);
+		
+		/* funcion que libera una nota de la lista liberando tambien
+		 * la memoria.
+		 * REQUIRES:
+		 * 	note != NULL
+		 */
+		void removeNote(Note *note);
 		
 		/* Funcion que determina si ya existe una Nota en el 
 		* modulo. */
@@ -90,6 +104,13 @@ class Module {
 		* NOTE: No debe ser liberada la tarea una vez agregada 
 		*/
 		void addTask(Task *t);
+		
+		/* funcion que libera una task de la lista liberando tambien
+		* la memoria.
+		* REQUIRES:
+		* 	task != NULL
+		*/
+		void removeTask(Task *task);
 		
 		/* Funcion que determina si ya existe una tarea en el 
 		 * modulo. */

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>781</width>
-    <height>684</height>
+    <width>848</width>
+    <height>880</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -206,6 +206,24 @@
         </widget>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item>
+          <widget class="QPushButton" name="createTaskBtn">
+           <property name="text">
+            <string>Create Task</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="deleteTaskBtn">
+           <property name="text">
+            <string>Delete Task</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <widget class="QTableWidget" name="notesTable">
          <column>
           <property name="text">
@@ -214,9 +232,34 @@
          </column>
         </widget>
        </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="QPushButton" name="createNoteBtn">
+           <property name="text">
+            <string>Create Note</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="deleteNoteBtn">
+           <property name="text">
+            <string>Delete Note</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="acceptBtn">
+     <property name="text">
+      <string>Save Module</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

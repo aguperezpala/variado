@@ -320,6 +320,19 @@ void Module::addFunction(Function *func)
 	this->funcList.push_back(func);
 }
 
+/* funcion que libera una function de la lista liberando tambien
+* la memoria.
+* REQUIRES:
+* 	func != NULL
+*/
+void Module::removeFunction(Function *func)
+{
+	assert(func != NULL);
+	this->funcList.remove(func);
+	
+	delete func;
+}
+
 /* Funcion que permite agregar una nota relacionada al modulo
 * REQUIRES:
 * 	note	!= NULL
@@ -329,6 +342,18 @@ void Module::addNote(Note *note)
 {
 	assert(note != NULL);
 	this->noteList.push_back(note);
+}
+
+/* funcion que libera una nota de la lista liberando tambien
+* la memoria.
+* REQUIRES:
+* 	note != NULL
+*/
+void Module::removeNote(Note *note)
+{
+	assert(note != NULL);
+	this->noteList.remove(note);
+	delete note;
 }
 
 /* Funcion que determina si ya existe una Nota en el 
@@ -357,6 +382,18 @@ void Module::addTask(Task *t)
 {
 	assert(t != NULL);
 	this->taskList.push_back(t);
+}
+
+/* funcion que libera una task de la lista liberando tambien
+* la memoria.
+* REQUIRES:
+* 	task != NULL
+*/
+void Module::removeTask(Task *task)
+{
+	assert(task != NULL);
+	this->taskList.remove(task);
+	delete task;
 }
 
 /* Funcion que determina si ya existe una tarea en el 
