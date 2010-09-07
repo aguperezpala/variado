@@ -5,15 +5,59 @@
 
 #include "module_gui.h"
 
+void GUIModule::addNewTaskToTable(Task *t)
+{
+	QTableWidgetItem *newItem = NULL;
+	QString aux = "";
+	string stdaux = "";
+	
+	if (t == NULL)
+		return;
+	/* agregamos una nueva fila donde vamos agregar la tarea */
+	this->tasksTable->insertRow(this->tasksTable->rowCount());
+	
+	/* sacamos el titulo */
+	stdaux = t->getTitle();
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,0, newItem);
+	
+	/* sacamos la descripcion */
+	stdaux = t->getDescription();
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,1, newItem);
+					
+	/* sacamos la prioridad */
+	t->getStringPriority(stdaux);
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,2, newItem);
+					
+	/* sacamos el kind */
+	t->getStringType(stdaux);
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,3, newItem);
+	
+	/* sacamos el state */
+	t->getStringStatus(stdaux);
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,4, newItem);
+	
+	/* sacamos el kind */
+	stdaux = "Created time FIXME";
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->tasksTable->setItem(this->tasksTable->rowCount()-1,5, newItem);
+}
 
 /* funcion que rellena la tabla de tareas por medio de una lista
 * de Tasks */
 void GUIModule::fillTasksTable(list<Task *> &l)
 {
 	list<Task *>::iterator it;
-	QTableWidgetItem *newItem = NULL;
-	QString aux = "";
-	string stdaux = "";
 	
 	/*! notar que tiene que haber una biyeccion aca entre los campos de las
 	 * tasks y la cantidad de columnas de la tabla */
@@ -24,75 +68,42 @@ void GUIModule::fillTasksTable(list<Task *> &l)
 		/* agregamos una nueva fila donde vamos agregar la tarea */
 		this->tasksTable->insertRow(this->tasksTable->rowCount());
 		
-		/* sacamos el titulo */
-		stdaux = (*it)->getTitle();
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,0,
-					   newItem);
-		
-		/* sacamos la descripcion */
-		stdaux = (*it)->getDescription();
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,1,
-					   newItem);
-					   
-		/* sacamos la prioridad */
-		(*it)->getStringPriority(stdaux);
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,2,
-					   newItem);
-					   
-		/* sacamos el kind */
-		(*it)->getStringType(stdaux);
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,3,
-					   newItem);
-		
-		/* sacamos el state */
-		(*it)->getStringStatus(stdaux);
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,4,
-					   newItem);
-		
-		/* sacamos el kind */
-		stdaux = "Created time FIXME";
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->tasksTable->setItem(this->tasksTable->rowCount()-1,5,
-					   newItem);
-		
+		addNewTaskToTable(*it);
 	}
-	
-	
 }
+
+
+void GUIModule::addNewNoteToTable(Note *n)
+{
+	QTableWidgetItem *newItem = NULL;
+	QString aux = "";
+	string stdaux = "";
+	
+	if(n == NULL)
+		return;
+	
+	/* agregamos una nueva fila donde vamos agregar la nota */
+	this->notesTable->insertRow(this->notesTable->rowCount());
+	
+	/* sacamos la nota */
+	stdaux = n->getNote();
+	aux = stdaux.c_str();
+	newItem = new QTableWidgetItem(aux);
+	this->notesTable->setItem(this->notesTable->rowCount()-1,0, newItem);
+}
+
 
 /* funcion que rellena la tabla de notas por medio de una lista
 * de Notes */
 void GUIModule::fillNotesTable(list<Note *> &l)
 {
 	list<Note *>::iterator it;
-	QTableWidgetItem *newItem = NULL;
-	QString aux = "";
-	string stdaux = "";
+	
 	
 	for(it = l.begin(); it != l.end(); ++it) {
 		if(*it == NULL)
 			continue;
-		/* agregamos una nueva fila donde vamos agregar la nota */
-		this->notesTable->insertRow(this->notesTable->rowCount());
-		
-		/* sacamos la nota */
-		stdaux = (*it)->getNote();
-		aux = stdaux.c_str();
-		newItem = new QTableWidgetItem(aux);
-		this->notesTable->setItem(this->notesTable->rowCount()-1,0,
-					   newItem);
-		
+		addNewNoteToTable(*it);
 	}
 }
 
@@ -172,6 +183,8 @@ void GUIModule::loadFromModule(Module *mod)
 	
 	assert(mod != NULL);
 	
+	this->actualM = mod;
+	
 	
 	aux = mod->getName().c_str();
 	this->nameTxt->setText(aux);
@@ -206,5 +219,44 @@ void GUIModule::loadFromModule(Module *mod)
 	fillFunctionsTable(mod->getFunctions());
 	
 }
+
+
+void GUIModule::createTaskClick(void)
+{
+	Task *task = new Task();
+	GUITask *gt = NULL;
+	
+	if(task == NULL)
+		return;
+	gt = new GUITask();
+	if (gt == NULL){
+		delete task;
+		return;
+	}
+	
+	gt->loadFromTask(task);
+	if (gt->exec()){
+		/* debemos guardar */
+		gt->saveTask(task);
+		this->actualM->addTask(task);
+		/* agregamos la tarea al final de la lista */
+		addNewTaskToTable(task);
+		delete gt;
+	} else {
+		/* borramos todo */
+		delete gt;
+		delete task;
+	}
+	
+}
+void GUIModule::deleteTaskClick(void)
+{
+	/*! FIXME TODO */
+}
+
+void GUIModule::createNoteClick(void);
+void GUIModule::deleteNoteClick(void);
+void GUIModule::saveModuleClick(void);
+
 
 

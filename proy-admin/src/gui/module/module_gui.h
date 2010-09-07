@@ -37,18 +37,24 @@ public:
 	
 	~GUIModule(){};
 	
-		
 
-protected:
+slots:
+	void createTaskClick(void);
+	void deleteTaskClick(void);
+	void createNoteClick(void);
+	void deleteNoteClick(void);
+	void saveModuleClick(void);
 
 private:
 	/* funcion que rellena la tabla de tareas por medio de una lista
 	 * de Tasks */
 	void fillTasksTable(list<Task *> &l);
+	void addNewTaskToTable(Task *t);
 	
 	/* funcion que rellena la tabla de notas por medio de una lista
 	* de Notes */
 	void fillNotesTable(list<Note *> &l);
+	void addNewNoteToTable(Note *n);
 	
 	/* funcion que rellena la tabla de funciones por medio de una lista
 	* de Functions */
