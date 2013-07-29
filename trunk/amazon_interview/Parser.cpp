@@ -89,7 +89,7 @@ Parser::parseFunction(std::string& funName)
     for (size_t i = 1; i < MAX_FUN_NAME; ++i) {
         const int currentChar = mStream.get();
         // check that is a valid character (not a space)
-        if (std::isspace(currentChar)) {
+        if (std::isspace(currentChar) || currentChar < 0) {
             debugERROR("Incalid function name: %s, problematic character: %c\n",
                     funName.c_str(), static_cast<char>(currentChar));
             return ResultCode::InvalidFormat;
