@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "Defines.h"
+
 // @brief This class will be specialized to parse each line of the input stream.
 //        We will not use generic "methods" for parsing since it is a little
 //        project and we don't need to do a lot of things here (and we are using
@@ -16,7 +18,7 @@ public:
 
     // Define the list of errors that the parser can return
     //
-    enum ResultCode {
+    enum class ResultCode {
         NoError = 0,
         InvalidFormat,
         EndOfLine,
@@ -68,7 +70,7 @@ public:
     //       read the function name or you read numbers in the last call).
     //
     ResultCode
-    parseNumbers(unsigned int N, std::vector<int>& numbers);
+    parseNumbers(unsigned int N, std::vector<IntegerType>& numbers);
 
     // @brief With this function we can read until the next \n (including).
     //        This way we can avoid having problems when parsing new lines.

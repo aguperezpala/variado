@@ -6,7 +6,9 @@
 #include <UnitTest++/UnitTest++.h>
 
 #include "Parser.h"
+#include "Defines.h"
 #include "Debug.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +235,7 @@ TEST(ParserStreamPositionMethods)
 
 TEST(ParserInvalidNumbers)
 {
-    std::vector<int> numbers;
+    std::vector<IntegerType> numbers;
 
     // check for empty numbers
     {
@@ -307,7 +309,7 @@ TEST(ParserInvalidNumbers)
 
 TEST(ParserValidNumberShortList)
 {
-    std::vector<int> numbers;
+    std::vector<IntegerType> numbers;
 
     // parse for 0 numbers in a valid list
     {
@@ -395,6 +397,7 @@ TEST(ParserValidNumberShortList)
 
 TEST(ParserValidNumbersLongList)
 {
+    // TODO
     // check for a lot of numbers
 
     // check for multiple read (read less numbers than the real list)
