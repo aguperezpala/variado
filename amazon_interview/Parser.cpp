@@ -41,7 +41,7 @@ Parser::skipWhiteSpacesExcept(char exception)
 }
 ////////////////////////////////////////////////////////////////////////////////
 bool
-Parser::readNumber(int& result, char& lastChar)
+Parser::readNumber(IntegerType& result, char& lastChar)
 {
     // skip spaces
     int nextCharacter = skipWhiteSpacesExcept('\n');
@@ -148,7 +148,7 @@ Parser::parseFunction(std::string& funName)
 
 ////////////////////////////////////////////////////////////////////////////////
 Parser::ResultCode
-Parser::parseNumbers(unsigned int N, std::vector<int>& numbers)
+Parser::parseNumbers(unsigned int N, std::vector<IntegerType>& numbers)
 {
     if (N == 0) {
         debugWARNING("We are asking to parse 0 numbers...\n");
@@ -174,7 +174,7 @@ Parser::parseNumbers(unsigned int N, std::vector<int>& numbers)
     // now we can read the next N numbers
     bool everythingOK = true;
     char lastChar = 0;
-    int number = -1;
+    IntegerType number;
     numbers.reserve(N); // just in case to avoid multiple reallocations
 
     for (unsigned int i = 0; i < N && everythingOK; ++i) {
