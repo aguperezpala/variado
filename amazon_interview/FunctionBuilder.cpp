@@ -1,7 +1,7 @@
 #include "FunctionBuilder.h"
 
 #include <cctype>
-#include <math>
+#include <cmath>
 
 #include "Debug.h"
 // include all the functions here

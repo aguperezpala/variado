@@ -122,26 +122,22 @@ AvgFunction::simEvaluation(void)
 ////////////////////////////////////////////////////////////////////////////////
 // Percentil90 function
 // TODO! read the algorithm and implement this function
-class P90Function : public StreamFunction
+
+void
+P90Function::resetForNewData(void)
 {
-public:
-    P90Function() :
-        StreamFunction("p90")
-    {}
+    // TODO!
+}
 
-    virtual
-    ~P90Function() {};
+void
+P90Function::pushInputValues(const std::vector<IntegerType>& streamInput)
+{
+    // TODO!
+}
 
-    // Inherited methods
-    //
-    virtual void
-    resetForNewData(void);
-
-    virtual void
-    pushInputValues(const std::vector<IntegerType>& streamInput);
-
-    virtual std::string
-    simEvaluation(void);
-
-private:
-};
+std::string
+P90Function::simEvaluation(void)
+{
+    // TODO!
+    return "";
+}

@@ -18,7 +18,7 @@ public:
 
     // Define the list of errors that the parser can return
     //
-    enum class ResultCode {
+    enum ResultCode {
         NoError = 0,
         InvalidFormat,
         EndOfLine,
