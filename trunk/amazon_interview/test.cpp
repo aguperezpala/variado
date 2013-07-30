@@ -8,6 +8,8 @@
 #include "Parser.h"
 #include "Defines.h"
 #include "Debug.h"
+#include "StreamFunction.h"
+#include "FunctionBuilder.h"
 
 
 
@@ -403,6 +405,88 @@ TEST(ParserValidNumbersLongList)
     // check for multiple read (read less numbers than the real list)
 
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//                          StreamFunctions tests                             //
+////////////////////////////////////////////////////////////////////////////////
+
+// define a static FunctionBuilder instance....
+//
+static FunctionBuilder fBuilder;
+
+
+TEST(StreamFunction_Sum)
+{
+    StreamFunction* sum = fBuilder.getFunction("sum");
+    CHECK_EQUAL(sum, fBuilder.getFunction("Sum"));
+    CHECK_EQUAL(sum, fBuilder.getFunction("SUm"));
+    CHECK_EQUAL(sum, fBuilder.getFunction("SUM"));
+
+    std::vector<IntegerType> input;
+    input.reserve(100);
+
+    for (IntegerType i = 1; i <= 100; ++i) {
+        input.push_back(i);
+    }
+    const IntegerType resultSummatory = (100 * (100 + 1)) / 2;
+
+    // calculate values from a simple vector
+    sum->resetForNewData();
+    sum->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        ss << resultSummatory;
+        CHECK_EQUAL(ss.str(), sum->simEvaluation());
+    }
+
+
+    // calculate values from multiple inputs
+    sum->resetForNewData();
+    sum->pushInputValues(input);
+    sum->pushInputValues(input);
+    sum->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        ss << (resultSummatory * 3);
+        CHECK_EQUAL(ss.str(), sum->simEvaluation());
+    }
+}
+
+TEST(StreamFunction_Min)
+{
+    StreamFunction* fun = fBuilder.getFunction("min");
+    CHECK_EQUAL(fun, fBuilder.getFunction("Min"));
+    CHECK_EQUAL(fun, fBuilder.getFunction("MIn"));
+    CHECK_EQUAL(fun, fBuilder.getFunction("mIN"));
+
+    std::vector<IntegerType> input;
+    input.reserve(120);
+
+    for (IntegerType i = -10; i <= 100; ++i) {
+        input.push_back(i);
+    }
+
+    // calculate values from a simple vector
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+
+    CHECK_EQUAL("-10", fun->simEvaluation());
+
+
+    // calculate values from multiple inputs
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+    for (IntegerType i = 0, size = input.size(); i < size; ++i) {
+        input.push_back(input[i] - 100);
+    }
+    fun->pushInputValues(input);
+    fun->pushInputValues(input);
+
+    CHECK_EQUAL("-110", fun->simEvaluation());
+}
+
 
 
 
