@@ -92,8 +92,11 @@ AvgFunction::pushInputValues(const std::vector<IntegerType>& streamInput)
         return;
     }
 
-    // calculate the new avg
-
+    // calculate the new values
+    for (size_t i = 0, size = streamInput.size(); i < size; ++i) {
+        mAccum += streamInput[i];
+    }
+    mSamples += streamInput.size();
 }
 
 std::string

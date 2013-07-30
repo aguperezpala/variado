@@ -487,6 +487,64 @@ TEST(StreamFunction_Min)
     CHECK_EQUAL("-110", fun->simEvaluation());
 }
 
+TEST(StreamFunction_Avg)
+{
+    // TODO: the checks for the double cases could fail if we are trying to check
+    // the values directly, for this simple cases there are a low probabilities
+    // that we can get a fail
+    //
+
+    StreamFunction* fun = fBuilder.getFunction("avg");
+    CHECK_EQUAL(fun, fBuilder.getFunction("Avg"));
+    CHECK_EQUAL(fun, fBuilder.getFunction("AVG"));
+    CHECK_EQUAL(fun, fBuilder.getFunction("aVG"));
+
+    std::vector<IntegerType> input;
+    input.reserve(100);
+
+    for (IntegerType i = 1; i <= 100; ++i) {
+        input.push_back(i);
+    }
+    const IntegerType resultSummatory = (100 * (100 + 1)) / 2;
+    const DoubleType avgSummatory = static_cast<DoubleType>(resultSummatory) /
+        static_cast<DoubleType>(input.size());
+
+    // calculate values from a simple vector
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        ss << avgSummatory;
+        CHECK_EQUAL(ss.str(), fun->simEvaluation());
+    }
+
+
+    // calculate values from multiple inputs
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+    fun->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        ss << avgSummatory;
+        CHECK_EQUAL(ss.str(), fun->simEvaluation());
+    }
+
+    // add the double of the input one more time
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+    for (size_t i = 0, size = input.size(); i < size; ++i) {
+        input[i] *= 2;
+    }
+    fun->pushInputValues(input);
+    {
+        std::stringstream ss;
+        ss << avgSummatory * 1.5;
+        CHECK_EQUAL(ss.str(), fun->simEvaluation());
+    }
+}
+
 
 
 
