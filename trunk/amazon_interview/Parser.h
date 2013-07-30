@@ -9,7 +9,7 @@
 //        We will not use generic "methods" for parsing since it is a little
 //        project and we don't need to do a lot of things here (and we are using
 //        STL methods to parse). So this is a "Specialized Wrapper Parser" for our
-//        specific porpouse (parse method names and a list of numbers)
+//        specific purpose (parse method names and a list of numbers)
 //
 class Parser {
 public:
@@ -39,9 +39,15 @@ public:
 
     // @brief   Method used to parse a function name starting from the current
     //          position of the stream
-    // @param   funName   The name of the function readed, the name should be
+    // @param   funName   The name of the function read, the name should be
     //                  less than MAX_FUN_NAME
-    // @return  the associated ResultCode
+    // @return  InvalidFormat   for when the function name is ill-formed
+    //          EndOfLine       when the only character is a \n
+    //          EndOfFile       when what we are reading is an EOF only
+    //          NoError         when we could read the function name correctly
+    // @note    you mouse call skipCurrentLine for when the return values is
+    //          InvalidFormat and NoError if you want to skip until the next
+    //          new line.
     //
     ResultCode
     parseFunction(std::string& funName);
@@ -50,10 +56,12 @@ public:
     //          position of the stream. We will parse N numbers from the stream
     //          or until we get a '\n'
     // @param   N         Indicates how many numbers we want to read.
-    // @param   numbers   The vector of numbers readed.
-    // @returns NoError         if succes (and we didn't read a \n)
-    //          EndOfLine       if we could read the < N numbers and get the \n
-    //          EndOfFile       if we got with and EOF.
+    // @param   numbers   The vector of numbers read.
+    // @returns NoError         if success (and we didn't read a \n)
+    //          EndOfLine       if we could read <= N numbers and get the \n (
+    //                          without errors, or could read 0 numbers and only
+    //                          the \n).
+    //          EndOfFile       if we got with and EOF and couldn't read any number.
     //          InvalidFormat   on error.
     // @note We are assuming that if you call this method you is because
     //       the stream is already pointing to the correct place (i.e you already
@@ -86,7 +94,7 @@ private:
     // @brief Read bytes until we get with one inside of the list.
     // @param chars     The list of characters we need to find
     // @param charFound The character found (if we found it), check the return value
-    // @return true on succes | false on fail (EOF for example).
+    // @return true on success | false on fail (EOF for example).
     //
     bool
     readUntil(const std::string& chars, char& charFound);
@@ -97,6 +105,7 @@ private:
     // @return the last character we found that could be a the exception
     //         character or another character that is not a space
     //         or -1 on error
+    // @note   This method will remove the space characters and the exception also
     //
     int
     skipWhiteSpacesExcept(char exception);
