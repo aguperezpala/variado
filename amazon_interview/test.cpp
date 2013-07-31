@@ -10,6 +10,7 @@
 #include "Debug.h"
 #include "StreamFunction.h"
 #include "FunctionBuilder.h"
+#include "StreamEvaluator.h"
 
 
 
@@ -545,8 +546,164 @@ TEST(StreamFunction_Avg)
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//                        Stream Evaluator Tests                              //
+////////////////////////////////////////////////////////////////////////////////
 
+TEST(StreamEvaluator_SimpleCorrectValues)
+{
+    // test empty stream
+    {
+        std::stringstream in(""), out("");
+        StreamEvaluator::evaluateStream(in, out, 10000);
+        CHECK_EQUAL(out.str(), "");
+    }
 
+    // test one line stream
+    {
+        std::stringstream in("\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 10000);
+        std::string result(StreamEvaluator::EMPTY_LINE);
+        result = result + "\n";
+        CHECK_EQUAL(result, out.str());
+    }
+
+    // test single line with correct values
+    {
+        std::stringstream in("min:999,88,55,33,22,1,86\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 10000);
+        CHECK_EQUAL("1\n", out.str());
+    }
+
+    // test single long line (that have to be readed multiple times)
+    {
+        std::stringstream in("   min:   \t\t999, \t\t\t88,55,     33, 22,1,  86\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        CHECK_EQUAL("1\n", out.str());
+    }
+
+    // test one correct line, 2 empty, another correct.
+    {
+        std::stringstream in("\t\t\t\t     min:999,88,55,33,22,1,86\n\n\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result("1\n");
+        result = result + StreamEvaluator::EMPTY_LINE + "\n" +
+            StreamEvaluator::EMPTY_LINE + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+}
+
+TEST(StreamEvaluator_SimpleIncorrectValues)
+{
+    // test single line with illformed function + correct
+    {
+        std::stringstream in("misn:999,88,55,33,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+    {
+        std::stringstream in("min \t\t\t999,88,55,33,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+    {
+        std::stringstream in("mi: \t\t\t999,88,55,33,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+
+    // test single line with illformed numbers + correct
+    {
+        std::stringstream in("min: \t\t\t999,8a8,55,33,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+    {
+        std::stringstream in("min: \t\t\t999,8 8,55,33,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+    {
+        std::stringstream in("min: \t\t\t999,8 8,55,3*3,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::INVALID_LINE_FORMAT);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+
+    // test single line with unknown function + correct
+    {
+        std::stringstream in("mln: \t\t\t999,8 8,55,3*3,22,1,86\nsum: 1, 2, 2\n"), out("");
+        StreamEvaluator::evaluateStream(in, out, 2);
+        std::string result(StreamEvaluator::UNKNOWN_FUNCTION_NAME);
+        result = result + "\n" + "5\n";
+        CHECK_EQUAL(result, out.str());
+    }
+
+}
+
+TEST(StreamEvaluator_BigData)
+{
+    // do the big test here contemplating all the possible cases at once
+    std::vector<IntegerType> integers;
+    integers.reserve(100);
+
+    // start pushing the data into input stream and the expected output result
+    std::stringstream in(""), expected("");
+
+    // min = -4
+    in << " min\t\t:\t    \t";
+    for (IntegerType i = 0; i < 100; ++i) {
+        integers.push_back(i - 4);
+        in << integers[i] << "   \t\t   ,  \t  ";
+    }
+    in << "51\n";
+    expected << "-4\n"; // expected result for this operation
+
+    // put a invalid function now
+    in << "\t\t\r\rwrong_func: 1,2,3,4,5\n";
+    expected << StreamEvaluator::INVALID_LINE_FORMAT << "\n";
+
+    // put a empty line
+    in << "\n";
+    expected << StreamEvaluator::EMPTY_LINE << "\n";
+
+    // put a sum that should value
+    IntegerType accum = 0;
+    in << "\t\tsum\t\t\t\t  :";
+    for (size_t i = 0; i < 100; ++i) {
+        accum += integers[i];
+        in << integers[i] << "   \t\t   ,  \t  ";
+    }
+    in << "0\n";
+    expected << accum << "\n";
+
+    // avg
+    in << "AVG   :";
+    DoubleType avg = 0;
+    for (size_t i = 0; i < 100; ++i) {
+        avg += integers[i];
+        in << integers[i] << "   \t\t   ,  \t  ";
+    }
+    in << "0\n";
+    avg = avg / static_cast<DoubleType>(integers.size()+1);
+    expected << avg << "\n";
+
+    std::stringstream out("");
+    StreamEvaluator::evaluateStream(in, out, 2);
+
+    CHECK_EQUAL(expected.str(), out.str());
+}
 
 int
 main(void)
