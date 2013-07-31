@@ -108,15 +108,16 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 // Percentil90 function
 // TODO! read the algorithm and implement this function
+
+// Fwd declaration
+//
+class p2_t;
 class P90Function : public StreamFunction
 {
 public:
-    P90Function() :
-        StreamFunction("p90")
-    {}
-
+    P90Function();
     virtual
-    ~P90Function() {};
+    ~P90Function();
 
     // Inherited methods
     //
@@ -130,6 +131,7 @@ public:
     simEvaluation(void);
 
 private:
+    p2_t* mP2Impl;
 };
 
 #endif /* STREAMFUNCTIONS_H_ */

@@ -546,6 +546,56 @@ TEST(StreamFunction_Avg)
     }
 }
 
+TEST(StreamFunction_P90)
+{
+    StreamFunction* fun = fBuilder.getFunction("p90");
+    CHECK_EQUAL(fun, fBuilder.getFunction("P90"));
+
+    std::vector<IntegerType> input;
+    input.reserve(100);
+
+    for (IntegerType i = 1; i <= 100; ++i) {
+        input.push_back(i);
+    }
+
+    // calculate values from a simple vector
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        CHECK_EQUAL("90", fun->simEvaluation());
+    }
+
+    // note that we are getting an approximation here so this will fail for exact
+    // results
+
+/*    // calculate for an array of 2N but with the same values
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+    fun->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        CHECK_EQUAL("90", fun->simEvaluation());
+    }
+
+    // now push a input of 2N but counting from 0 to 2N
+    input.reserve(200);
+    for (IntegerType i = 1; i <= 200; ++i) {
+        input.push_back(i);
+    }
+    fun->resetForNewData();
+    fun->pushInputValues(input);
+
+    {
+        std::stringstream ss;
+        int n = 0.9 * input.size() + 0.5;
+        ss << input[n];
+        CHECK_EQUAL(ss.str(), fun->simEvaluation());
+    }*/
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                        Stream Evaluator Tests                              //
 ////////////////////////////////////////////////////////////////////////////////
