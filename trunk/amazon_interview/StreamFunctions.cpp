@@ -1,6 +1,10 @@
 #include "StreamFunctions.h"
 
 #include <sstream>
+#include <extLibs/p2.h>
+
+#include "Debug.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -126,21 +130,37 @@ AvgFunction::simEvaluation(void)
 // Percentil90 function
 // TODO! read the algorithm and implement this function
 
+P90Function::P90Function() :
+    StreamFunction("p90")
+,   mP2Impl(0)
+{}
+P90Function::~P90Function()
+{
+    delete mP2Impl;
+}
+
 void
 P90Function::resetForNewData(void)
 {
-    // TODO!
+    delete mP2Impl; mP2Impl = 0;
+    mP2Impl = new p2_t(0.9);
 }
 
 void
 P90Function::pushInputValues(const std::vector<IntegerType>& streamInput)
 {
-    // TODO!
+    ASSERT(mP2Impl);
+    // add each value
+    for (size_t i = 0, size = streamInput.size(); i < size; ++i) {
+        mP2Impl->add(static_cast<double>(streamInput[i]));
+    }
 }
 
 std::string
 P90Function::simEvaluation(void)
 {
-    // TODO!
-    return "";
+    ASSERT(mP2Impl);
+    std::stringstream ss;
+    ss << mP2Impl->result();
+    return ss.str();
 }

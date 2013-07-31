@@ -2,60 +2,48 @@
 #include <fstream>
 #include <sstream>
 
+#include "StreamEvaluator.h"
 
-void
-printStatus(const std::ifstream& s)
+static const unsigned int MAX_INT = 4096;
+
+static void
+printHelp(void)
 {
-    std::cout << "good(): " << s.good() << std::endl;
-    std::cout << "eof(): " << s.eof() << std::endl;
-    std::cout << "bad(): " << s.bad() << std::endl;
+    std::cout << "\n\nYou must call this tool with at least one argument like this:\n"
+        << "\ttool <filename> [maxInt]"
+            "\n\twhere the filename is the file path with the data to be parsed and\n"
+            "\t[maxInt] is an optional value that specifies the size of the numbers"
+            "\n\tof ints we want to read at once (as an upper bound). If this value"
+            "\n\tis not specified, then 4096 will be used\n\n";
 }
 
 
 int
 main(int argc, char** args)
 {
-    std::ifstream file("test.txt", std::ifstream::in);
-
-
-    std::stringstream ss(" 0, 1, 2, 3, 4 , 5 , 6 , 7 , 8 , 9\n");
-    ss >> std::noskipws;
-    int i;
-    while (ss >> i) {
-        std::cout << "value: " << i << std::endl;
-        ss.ignore();
+    if (argc < 2) {
+        printHelp();
+        return 1;
     }
 
-    int x1,x2,x3;
-    if (!(ss >> x1)) {
-        std::cout << "x1 fail\n";
-    } else {
-        std::cout << "x1 ok:" << x1 << "\n";
-    }
-    char c;
-    ss >> c;
-    if (!(ss >> x2)) {
-        std::cout << "x2 fail\n";
-    } else {
-        std::cout << "x2 ok: " << x2 << "\n";
+    // check if we can open the file
+    std::ifstream file(args[1], std::ifstream::in);
+
+    if (!file.is_open()) {
+        std::cerr << "Error reading the file " << args[1] << std::endl;
+        return 2;
     }
 
-
-    file >> std::ws;
-    printStatus(file);
-    for (int i = 0; i < 3; ++i) {
-        std::cout << "char: " << (char)file.get() << std::endl;
+    // check if we will use maxInt
+    unsigned int maxInt = MAX_INT;
+    if (argc == 3) {
+        std::stringstream ss;
+        ss << args[2];
+        ss >> maxInt;
     }
-    printStatus(file);
 
-    /*
-    int x = 0, y = 0;
+    // create the StreamEvaluator and evaluate the file
+    StreamEvaluator::evaluateStream(file, std::cout, maxInt);
 
-    char c;
-    if (std::cin >> x  >> c >> y) {
-        std::cout << "everything ok:" << x << " , " << y << "\n";
-    } else {
-        std::cout << "Error\n";
-    }*/
     return 0;
 }
